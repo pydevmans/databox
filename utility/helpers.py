@@ -25,7 +25,7 @@ def random_address_generator():
 	temp_nums = random.sample(range(0, 9), 3) 
 	temp_letters = [chr(i) for i in random.sample(range(*CAPITAL_LETTERS), 3)]
 	postal_code = ''
-	for i in range(len(temp_nums)):
+	for i in range(3):
 		postal_code += temp_letters[i] + str(temp_nums[i])
 	postal_code = postal_code[:3] + " " + postal_code[3:]
 	address = street_no + " " + ", ".join((street_address, city, province, postal_code)) + ' Canada'
