@@ -53,7 +53,7 @@ def random_user_generator():
     user = {
         "first_name": first_name,
         "last_name": last_name,
-        "age": age,
+        "age": int(age),
         "address": address,
         "telephone": telephone,
         "phone": phone,
@@ -64,6 +64,3 @@ def random_user_generator():
 
 def create_password(password):
     return password
-
-
-print(random_user_generator())
