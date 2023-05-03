@@ -1,12 +1,13 @@
 import logging
 import os
 import pdb
+from operator import lt, gt, eq, ge, le
 from functools import reduce
-
+from collections import namedtuple
+from copy import deepcopy
 
 class InvalidPropException(Exception):
     pass
-
 
 class NotAValidFieldType(Exception):
     pass
@@ -17,7 +18,7 @@ class TypeDoesntConfirmDefination(Exception):
 class Table:
     def __init__(self, tablename, columns, joiner="|"):
         """
-        Title/Records are passed as tuple.
+        Title/Header/Column-Name for Table is passed as tuple.
         This table represent for any shape or size file database representation of the SQL type data.
                 Fields:
                 tablename: string -> "Users"
@@ -66,6 +67,9 @@ class Table:
         return str(os.stat(self.filelocation).st_size) + " bytes"
 
 
+        
+            
+
 class FormattedTable(Table):
     def __init__(self, tablename, columns, joiner="|"):
         Table.__init__(self, tablename, columns, joiner="|")
@@ -78,25 +82,28 @@ class FormattedTable(Table):
         It defines the `type` of the field(s) of the Table.
         primitive types are (str, int, list, dict, float, bool, None)
         """
+        self.field_format.update({"pk": int})
         for col in self.columns:
+            title = col.split(":")[0]
             if "str" in col:
-                self.field_format.update({col: str})
+                self.field_format.update({title: str})
             elif "int" in col:
-                self.field_format.update({col: int})
+                self.field_format.update({title: int})
             elif "list" in col:
-                self.field_format.update({col: list})
+                self.field_format.update({title: list})
             elif "dict" in col:
-                self.field_format.update({col: dict})
+                self.field_format.update({title: dict})
             elif "float" in col:
-                self.field_format.update({col: float})
+                self.field_format.update({title: float})
             elif "bool" in col.lower():
-                self.field_format.update({col: bool})
+                self.field_format.update({title: bool})
             elif "none" in col.lower():
-                self.field_format.update({col: None})
+                self.field_format.update({title: None})
             else:
                 raise NotAValidFieldType(
-                    f"The field '{col}' is not valid field description. Please provide valid type description."
+                    f"The field '{title}' is not valid field description. Please provide valid type description."
             )
+                
     def _type_checking(self, **kwargs):
         """
         Exclusively used for the insertion of the record to the FormattedTable.
@@ -104,7 +111,7 @@ class FormattedTable(Table):
         Prevents mismatched datatype entry in Table.
         Raises `TypeDoesntConfirmDefination` when datatypes don't match.
         """
-        table_field_types = self.field_format.values()
+        table_field_types = tuple(self.field_format.values())[1:]
         record_field_values = kwargs.values()
         _ = list(map(lambda a: type(a[0]) == a[1], zip(record_field_values, table_field_types)))
         if False in _ and _.count(False) == 1:
@@ -121,3 +128,101 @@ class FormattedTable(Table):
     def insert(self, **kwargs):
         self._type_checking(**kwargs)
         Table.insert(self, **kwargs)
+
+    def from_database(self):
+        """
+        Returns Type compliant to defination of Table output from the database.
+        """
+        obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
+        types_tuple = tuple(self.field_format.values())
+        output = []
+        with open(self.filelocation, mode="r") as file:
+            for record in file.readlines()[1:]:
+                args = []
+                for index, val in enumerate(record.split(self.joiner)):
+                    if types_tuple[index] != str:
+                        val = types_tuple[index](val)
+                    args.append(val)
+                instance = obj(*args)
+                output.append(instance)
+        return output
+                    
+
+class AggregateOperations:
+    def __init__(self):
+        self.ops = dict()
+
+    def less_than(self, field, value=0):
+        if self.ops.get(field):
+            self.ops[field].append({ "value":value, "op":"lt"})
+        else:
+            self.ops.update({field: [{ "value":value, "op":"lt"}]})
+        return self
+
+    def greater_than(self, field, value=0):
+        if self.ops.get(field):
+            self.ops[field].append({ "value":value, "op":"gt"})
+        else:
+            self.ops.update({field: [{ "value":value, "op":"gt"}]})
+        return self
+
+    def less_equal(self, field, value=0):
+        if self.ops.get(field):
+            self.ops[field].append({ "value":value, "op":"le"})
+        else:
+            self.ops.update({field: [{ "value":value, "op":"le"}]})
+        return self
+
+    def greater_equal(self, field, value=0):
+        if self.ops.get(field):
+            self.ops[field].append({ "value":value, "op":"ge"})
+        else:
+            self.ops.update({field: [{ "value":value, "op":"ge"}]})
+        return self
+
+    def equal(self, field, value=0):
+        if self.ops.get(field):
+            self.ops[field].append({ "value":value, "op":"eq"})
+        else:
+            self.ops.update({field: [ {"value":value, "op":"eq"}]})
+        return self
+
+    def clear(self):
+        self.ops = dict()
+
+
+class AggregatableTable(FormattedTable):
+    def __init__(self, tablename, columns, joiner="|"):
+        FormattedTable.__init__(self, tablename, columns)
+        self.aggregate = AggregateOperations()
+
+    def _filter_records(self, iterable_of_records):
+        hashmap_operation = {
+            "lt": lt,
+            "gt": gt,
+            "le": le,
+            "ge": ge,
+            "eq": eq,
+        }
+        ans_copy = deepcopy(iterable_of_records)
+        # this for loop performs all the records from the database
+        for record in iterable_of_records:
+            # this for loop gets all `field`, `op` has provided to process
+            for field_aggr_key, field_aggr_value in self.aggregate.ops.items():
+                # this for loop performs all `Operation`s needed to be perform on field of records
+                for op in field_aggr_value:
+                    if not hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]):
+                        ans_copy.remove(record)
+                        print("[REMOVED RECORD!!]")
+                        break
+                    else:
+                        print("[LET IT GO!!]")
+
+        return ans_copy
+    
+    def execute(self):
+        list_records = self.from_database()
+        output = self._filter_records(list_records)
+        self.aggregate.clear()
+        return output
+

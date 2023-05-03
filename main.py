@@ -6,7 +6,7 @@ import os
 from collections import namedtuple
 from functools import reduce
 from utility.helpers import random_user_generator
-from utility.core import FormattedTable
+from utility.core import Table, FormattedTable, AggregatableTable
 
 
 if __name__ == "__main__":
@@ -25,8 +25,20 @@ if __name__ == "__main__":
     #     t.insert(**people_dict)
     
     # Testing with helpers method
-    t = FormattedTable("TestUserProfile", ("first_name:str", "last_name:str", "age:int", "address:str", "telephone:str", "phone:str", "email:str"))
-    for i in range(10):
+    # t = FormattedTable("TestUserProfile", ("first_name:str", "last_name:str", "age:int", "address:str", "telephone:str", "phone:str", "email:str"))
+    # for i in range(10):
+    #     people = random_user_generator()
+    #     t.insert(**people)
+    
+    # Aggregates the Data from database
+    t = AggregatableTable("TestUserProfile", ("first_name:str", "last_name:str", "age:int", "address:str", "telephone:str", "phone:str", "email:str"))
+    for i in range(20):
         people = random_user_generator()
         t.insert(**people)
-    # t.find("first_name", "Rajit Bhavsar")
+    t.aggregate.equal("first_name", value="Adam").greater_equal("age", 80)
+    ans = t.execute()
+    # t.aggregate.equal("first_name", value="Kajol").equal("last_name", value="Bhavsar")# .greater_equal("age", 80)
+    # ans1 = t.execute()
+    print("[ANS]", [i.first_name for i in ans], " [LEN OF ANS]", len(ans) )
+
+
