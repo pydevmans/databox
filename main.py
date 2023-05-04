@@ -18,7 +18,7 @@ if __name__ == "__main__":
     #                         "hair_color:str", "skin_color:str", "eye_color:str", "birth_year:str",
     #                         "gender:str", "homeworld:str", "films:list", "species:list", "vehicles:list", 
     #                         "starship:list", "created:str", "edited:str", "url:str")
-    #                     )
+    # )
     # for i in range(1, 10):
     #     people = requests.get(url+str(i))
     #     people_dict = json.loads(people.text)
@@ -29,16 +29,16 @@ if __name__ == "__main__":
     # for i in range(10):
     #     people = random_user_generator()
     #     t.insert(**people)
-    
+
     # Aggregates the Data from database
     t = AggregatableTable("TestUserProfile", ("first_name:str", "last_name:str", "age:int", "address:str", "telephone:str", "phone:str", "email:str"))
     for i in range(20):
         people = random_user_generator()
         t.insert(**people)
-    t.aggregate.equal("first_name", value="Adam").greater_equal("age", 80)
+    t.aggregate.equal("first_name", value="Adam").greater_equal("age", 20).less_equal("age", 50)
     ans = t.execute()
-    # t.aggregate.equal("first_name", value="Kajol").equal("last_name", value="Bhavsar")# .greater_equal("age", 80)
-    # ans1 = t.execute()
-    print("[ANS]", [i.first_name for i in ans], " [LEN OF ANS]", len(ans) )
-
+    t.aggregate.equal("last_name", value="Bhavsar").greater_equal("age", 35)
+    ans1 = t.execute()
+    print("[ANS]", [i.pk for i in ans], " [LEN OF ANS]", len(ans) )
+    print("[ANS1]", [i.pk for i in ans1], " [LEN OF ANS1]", len(ans1) )
 

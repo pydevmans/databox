@@ -67,9 +67,6 @@ class Table:
         return str(os.stat(self.filelocation).st_size) + " bytes"
 
 
-        
-            
-
 class FormattedTable(Table):
     def __init__(self, tablename, columns, joiner="|"):
         Table.__init__(self, tablename, columns, joiner="|")
@@ -146,7 +143,7 @@ class FormattedTable(Table):
                 instance = obj(*args)
                 output.append(instance)
         return output
-                    
+
 
 class AggregateOperations:
     def __init__(self):
@@ -208,18 +205,17 @@ class AggregatableTable(FormattedTable):
         # this for loop performs all the records from the database
         for record in iterable_of_records:
             # this for loop gets all `field`, `op` has provided to process
+            process_record = True
             for field_aggr_key, field_aggr_value in self.aggregate.ops.items():
                 # this for loop performs all `Operation`s needed to be perform on field of records
                 for op in field_aggr_value:
-                    if not hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]):
+                    if hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]) == False:
                         ans_copy.remove(record)
-                        print("[REMOVED RECORD!!]")
+                        process_record = False
                         break
-                    else:
-                        print("[LET IT GO!!]")
-
+                if process_record == False: break
         return ans_copy
-    
+
     def execute(self):
         list_records = self.from_database()
         output = self._filter_records(list_records)
