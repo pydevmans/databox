@@ -1,62 +1,32 @@
 import pdb
 import logging
+import requests
+import json
+import os
 from collections import namedtuple
 from functools import reduce
-
-class InvalidPropException(Exception):
-	pass
-
-class User:
-	def __init__(self, name, password, email):
-		self.name = name
-		self.password = password
-		self.email = email
-
-	def __str__(self):
-		return f"User: {self.name}."
-
-class Table:
-	def __init__(self, tablename, columns, joiner="|"):
-		"""
-		Title/Records are passed as tuple.
-		"""
-		self.tablename = tablename
-		self.columns = columns
-		self.last_pk = 0
-		self.joiner = joiner
-		logging.debug(f"""
-			Table Creation of: {self.tablename}.
-				Columns added: {self.columns}.
-		""")
-		self.insert("pk", *self.columns)
-		self._format(columns)
-
-	def __str__(self):
-		return f"Table: {self.tablename}."
-
-	def __repr__(self):
-		return f"Table: {self.tablename}."
-
-	def insert(self, *args):
-		"""
-		Exclusively for the Table creation purpose
-		"""
-		with open("database/" + self.tablename + ".txt", mode="w") as file:
-			data = reduce(lambda x, y: x + self.joiner + str(y), args, "") + "\n"
-			file.write(data)
-
-	def write(self, *args, mode="r+"):
-		with open("database/" + self.tablename + ".txt", mode=mode) as file:
-			data = str(self.last_pk)
-			data = reduce(lambda x, y: x+self.joiner+str(y), args, data) + "\n"
-			file.write(data)
-			self.last_pk += 1
+from utility.helpers import random_user_generator
+from utility.core import FormattedTable
 
 
-while True:
-	url = input("Enter the path: ")
-	if "exit" or "quit" in url.lower():
-		break
-	view(url)
+if __name__ == "__main__":
+    # url = input("Enter the path: ")
 
-
+    # Testing with SWAPI
+    # url = "https://swapi.dev/api/people/"
+    # t = FormattedTable("TestCharacters", ("name:str", "height:int", "mass:int",
+    #                         "hair_color:str", "skin_color:str", "eye_color:str", "birth_year:str",
+    #                         "gender:str", "homeworld:str", "films:list", "species:list", "vehicles:list", 
+    #                         "starship:list", "created:str", "edited:str", "url:str")
+    #                     )
+    # for i in range(1, 10):
+    #     people = requests.get(url+str(i))
+    #     people_dict = json.loads(people.text)
+    #     t.insert(**people_dict)
+    
+    # Testing with helpers method
+    t = FormattedTable("TestUserProfile", ("first_name:str", "last_name:str", "age:int", "address:str", "telephone:str", "phone:str", "email:str"))
+    for i in range(10):
+        people = random_user_generator()
+        t.insert(**people)
+    # t.find("first_name", "Rajit Bhavsar")
