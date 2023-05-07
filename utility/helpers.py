@@ -1,5 +1,4 @@
 import random
-import pdb
 from functools import reduce
 
 CAPITAL_LETTERS = (65, 90)
@@ -64,3 +63,7 @@ def random_user_generator():
 
 def create_password(password):
     return password
+
+def sw(field, pattern):
+    if field.startswith(pattern): return True
+    else: return False

@@ -1,10 +1,10 @@
-import logging
 import os
-import pdb
-from operator import lt, gt, eq, ge, le
-from functools import reduce
-from collections import namedtuple
+import logging
+from .helpers import sw
 from copy import deepcopy
+from collections import namedtuple
+from functools import reduce
+from operator import lt, gt, eq, ge, le
 
 class InvalidPropException(Exception):
     pass
@@ -200,6 +200,16 @@ class AggregateOperations:
             self.ops.update({field: [ {"value":value, "op":"eq"}]})
         return self
 
+    def starts_with(self, field, value=""):
+        "This methods is only for string field."
+        if type(value) != str:
+            raise NotAValidFieldType
+        if self.ops.get(field):
+            self.ops[field].append({ "value":value, "op":"sw"})
+        else:
+            self.ops.update({field: [ {"value":value, "op":"sw"}]})
+        return self
+
     def clear(self):
         self.ops = dict()
 
@@ -216,12 +226,13 @@ class AggregatableTable(FormattedTable):
             "le": le,
             "ge": ge,
             "eq": eq,
+            "sw": sw,
         }
         ans_copy = deepcopy(iterable_of_records)
         # this for loop performs all the records from the database
         for record in iterable_of_records:
             # this for loop gets all `field`, `op` has provided to process
-            process_record = True
+            do_process_record = True
             for field_aggr_key, field_aggr_value in self.aggregate.ops.items():
                 # this for loop performs all `Operation`s needed to be perform on field of records
                 for op in field_aggr_value:
@@ -229,7 +240,7 @@ class AggregatableTable(FormattedTable):
                         ans_copy.remove(record)
                         process_record = False
                         break
-                if process_record == False: break
+                if do_process_record == False: break
         return ans_copy
 
     def execute(self):

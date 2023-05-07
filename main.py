@@ -1,12 +1,10 @@
-import pdb
+import os
+import json
 import logging
 import requests
-import json
-import os
 from collections import namedtuple
 from functools import reduce
-from utility.helpers import random_user_generator
-from utility.core import Table, FormattedTable, AggregatableTable
+from utility import Table, FormattedTable, AggregatableTable, random_user_generator
 
 
 if __name__ == "__main__":
@@ -41,9 +39,9 @@ if __name__ == "__main__":
     # print("[ANS1]", [i.pk for i in ans1], " [LEN OF ANS1]", len(ans1))
 
     # Access Exisiting Tables and perform all needed operations.
-    # t = AggregatableTable.access_table("TestUserProfiles")
-    # t.aggregate.equal("first_name", value="Kajol").greater_equal("age", 20).less_equal("age", 30)
-    # ans = t.execute()
-    # print("[ANS]", [i.pk for i in ans], " [LEN OF ANS]", len(ans))
+    t = AggregatableTable.access_table("TestUserProfiles")
+    t.aggregate.starts_with("first_name", "Kaj")
+    ans = t.execute()
+    print("[ANS]", [i.pk for i in ans], " [LEN OF ANS]", len(ans))
      
     # os.remove("database/" + "TestUserProfiles.txt")

@@ -1,10 +1,10 @@
 import os
-import pdb
 import unittest
+# from ..utility import *
+from ..utility import Table, FormattedTable, AggregatableTable, TypeDoesntConfirmDefination, random_user_generator, sw
+# from .helpers import random_user_generator, sw
 from functools import reduce
-from core import Table, FormattedTable, AggregatableTable, TypeDoesntConfirmDefination
 from collections import namedtuple
-from helpers import random_user_generator
 
 
 class TestTable(unittest.TestCase):
@@ -174,7 +174,17 @@ class TestAggregatableTable(unittest.TestCase):
         instances_2 = self.t.execute()
         self.assertEqual(instances_2, records)
 
+    def test_starts_with(self):
+        records = self.get_records()
+        
+        self.t.aggregate.starts_with("first_name", "Ad")
+        instances = self.t.execute()
+        self.assertEqual(instances, records)
 
+        self.t.aggregate.starts_with("first_name", "Pk")
+        instances = self.t.execute()
+        self.assertNotEqual(instances, records)
+        
 if __name__ == "__main__":
     unittest.main()
 
