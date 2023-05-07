@@ -23,4 +23,5 @@
 ## Running Tests
 
     At the project directory level directory run the command,
-    `py utility/test_core.py`
+
+`py -m unittest utility\test_core.py`

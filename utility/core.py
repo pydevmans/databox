@@ -1,5 +1,4 @@
 import os
-import logging
 from .helpers import sw
 from copy import deepcopy
 from collections import namedtuple
@@ -30,10 +29,6 @@ class Table:
         self.last_pk = 1
         self.joiner = joiner
         self.filelocation = "database/" + self.tablename + ".txt"
-        logging.debug(f"""
-			Table Creation of: {self.tablename}.
-				Columns added: {self.columns}.
-		""")
         self._insert(*self.columns)
 
     def __str__(self):
@@ -78,10 +73,12 @@ class Table:
     def access_table(cls, tablename, columns=tuple(), joiner="|"):
         filename = "database/" + tablename + ".txt"
         file = open(filename, mode="r")
-        first_line = file.readline()
-        cols = tuple(first_line.split(joiner)[1:])
+        lines = file.readlines()
+        cols = tuple(lines[0].split(joiner)[1:])
+        obj = cls(tablename, cols, joiner)
         file.close()
-        return cls(tablename, cols, joiner)
+        obj.last_pk = len(lines)
+        return obj
 
 class FormattedTable(Table):
     def __init__(self, tablename, columns, joiner="|"):
@@ -134,7 +131,7 @@ class FormattedTable(Table):
             indexes = [index for index, val in enumerate(_) if val == False]
             raise TypeDoesntConfirmDefination(f"The type for value does not match with `{[self.columns[i] for i in indexes]}` specification."
                                               "Please Check the data type are as per specification of the Table type defination."
-                                              )
+                                            )
         else:
             return
 
@@ -201,7 +198,7 @@ class AggregateOperations:
         return self
 
     def starts_with(self, field, value=""):
-        "This methods is only for string field."
+        """This methods is only for string field."""
         if type(value) != str:
             raise NotAValidFieldType
         if self.ops.get(field):
@@ -244,6 +241,11 @@ class AggregatableTable(FormattedTable):
         return ans_copy
 
     def execute(self):
+        """
+        Performs all the `op` given to the field, to all records and returns only
+        record that passes the test.
+        When no `op` is provided, all records are returned.
+        """
         list_records = self.from_database()
         output = self._filter_records(list_records)
         self.aggregate.clear()

@@ -1,8 +1,9 @@
 import os
 import unittest
-# from ..utility import *
-from ..utility import Table, FormattedTable, AggregatableTable, TypeDoesntConfirmDefination, random_user_generator, sw
-# from .helpers import random_user_generator, sw
+from utility import (Table, FormattedTable, AggregatableTable, 
+                     TypeDoesntConfirmDefination,
+                     random_user_generator, sw
+                    )
 from functools import reduce
 from collections import namedtuple
 
@@ -185,6 +186,3 @@ class TestAggregatableTable(unittest.TestCase):
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
         
-if __name__ == "__main__":
-    unittest.main()
-
