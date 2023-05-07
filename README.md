@@ -19,3 +19,8 @@
 ## Flow of the Code
 
     Feature branch ---> Testing branch ---> Master branch
+
+## Running Tests
+
+    At the project directory level directory run the command,
+    `py utility/test_core.py`

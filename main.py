@@ -31,14 +31,19 @@ if __name__ == "__main__":
     #     t.insert(**people)
 
     # Aggregates the Data from database
-    t = AggregatableTable("TestUserProfile", ("first_name:str", "last_name:str", "age:int", "address:str", "telephone:str", "phone:str", "email:str"))
-    for i in range(20):
-        people = random_user_generator()
-        t.insert(**people)
-    t.aggregate.equal("first_name", value="Adam").greater_equal("age", 20).less_equal("age", 50)
-    ans = t.execute()
-    t.aggregate.equal("last_name", value="Bhavsar").greater_equal("age", 35)
-    ans1 = t.execute()
-    print("[ANS]", [i.pk for i in ans], " [LEN OF ANS]", len(ans) )
-    print("[ANS1]", [i.pk for i in ans1], " [LEN OF ANS1]", len(ans1) )
+    # t = AggregatableTable.access_table("TestUserProfiles")
+    # t.aggregate.equal("first_name", value="Kalpit").greater_equal("age", 100).less_equal("age", 150)
+    # ans = t.execute()
+    # print("[ANS]", [i.pk for i in ans], " [LEN OF ANS]", len(ans))
+    
+    # t.aggregate.equal("last_name", value="Bhavsar").greater_equal("age", 35)
+    # ans1 = t.execute()
+    # print("[ANS1]", [i.pk for i in ans1], " [LEN OF ANS1]", len(ans1))
 
+    # Access Exisiting Tables and perform all needed operations.
+    # t = AggregatableTable.access_table("TestUserProfiles")
+    # t.aggregate.equal("first_name", value="Kajol").greater_equal("age", 20).less_equal("age", 30)
+    # ans = t.execute()
+    # print("[ANS]", [i.pk for i in ans], " [LEN OF ANS]", len(ans))
+     
+    # os.remove("database/" + "TestUserProfiles.txt")

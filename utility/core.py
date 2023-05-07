@@ -42,30 +42,46 @@ class Table:
     def __repr__(self):
         return f"<Table: {self.tablename}>"
 
+    def __eq__(self, other):
+        if self.filelocation == other.filelocation: return True 
+        else: return False
+    
     def _insert(self, *args):
         """
-        Exclusively for the Table creation purpose.
+        This method when worked to create fresh table, creates file and
+        when working on existing file have read/write privilages.
         """
-        with open(self.filelocation, mode="w") as file:
-            data = reduce(lambda x, y: x + self.joiner +
-                          str(y), args, "pk:int") + "\n"
-            file.write(data)
+        if os.path.isfile(self.filelocation): pass
+        else:
+            with open(self.filelocation, mode="w") as file:
+                data = reduce(lambda x, y: x + self.joiner +
+                            str(y), args, "pk:int") + "\n"
+                file.write(data)
 
     def insert(self, **kwargs):
         """
-        Inserts record to the database.
+        Inserts record to the database when intialising it
         Converts all the field to `str(field)` before inserting into database.
+        It wipes all the data and starts fresh.
         """
         with open(self.filelocation, mode="a") as file:
             data = str(self.last_pk)
             data = reduce(lambda x, y: x+self.joiner+str(y),
-                          kwargs.values(), data) + "\n"
+                            kwargs.values(), data) + "\n"
             file.write(data)
-            self.last_pk += 1
+        self.last_pk += 1
 
     def size_on_disk(self):
         return str(os.stat(self.filelocation).st_size) + " bytes"
 
+    @classmethod
+    def access_table(cls, tablename, columns=tuple(), joiner="|"):
+        filename = "database/" + tablename + ".txt"
+        file = open(filename, mode="r")
+        first_line = file.readline()
+        cols = tuple(first_line.split(joiner)[1:])
+        file.close()
+        return cls(tablename, cols, joiner)
 
 class FormattedTable(Table):
     def __init__(self, tablename, columns, joiner="|"):
