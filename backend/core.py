@@ -1,5 +1,5 @@
 import os
-from .helpers import sw
+from .helpers import sw, deprecated, myf
 from copy import deepcopy
 from collections import namedtuple
 from functools import reduce
@@ -52,6 +52,14 @@ class Table:
                 data = reduce(lambda x, y: x + self.joiner +
                             str(y), args, "pk:int") + "\n"
                 file.write(data)
+
+        
+    @staticmethod
+    def _features():
+        """
+        This method is used to update membership features to inform end-users of product.
+        """
+        return ["Relationl Database"]
 
     def insert(self, **kwargs):
         """
@@ -111,7 +119,9 @@ class FormattedTable(Table):
                 self.field_format.update({title: None})
             else:
                 raise NotAValidFieldType(
-                    f"The field '{title}' is not valid field description. Please provide valid type description."
+                    f"The field '{title}' is not valid field description."
+                    "Please provide valid type description [str, int, list,"
+                    "dict, float. bool, None]"
             )
                 
     def _type_checking(self, **kwargs):
@@ -129,16 +139,53 @@ class FormattedTable(Table):
             raise TypeDoesntConfirmDefination(f"The type for value does not match with '{self.columns[index]}' specification.")
         elif _.count(False) >= 2:
             indexes = [index for index, val in enumerate(_) if val == False]
-            raise TypeDoesntConfirmDefination(f"The type for value does not match with `{[self.columns[i] for i in indexes]}` specification."
-                                              "Please Check the data type are as per specification of the Table type defination."
-                                            )
+            raise TypeDoesntConfirmDefination(f"""The type for value does not match with 
+                                              `{[self.columns[i] for i in indexes]}` specification.
+                                              Please Check the data type are as per specification
+                                              of the Table type defination."""
+                )
         else:
             return
+
+    @staticmethod
+    def _features():
+        """
+        This method is used to update membership features to inform end-users of product.
+        """
+        return ["Type compliant"]
+
+    def read(self):
+        lines = (line for line in open(self.filelocation, "r"))
+        records = (col for col in lines)
+        title_record = next(records)
+        obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
+        return (obj(*args.split("|")) for args in records)
+
+    def query(self, **kwargs):
+        def myfunc(record, **kwargs):
+            for key in kwargs.keys():
+                if getattr(record, key, None) != kwargs[key]:
+                    return False
+            return True
+        return filter(lambda rec: myfunc(rec, **kwargs), self.read())
+
+    def delete(self, pk):
+        if pk == 0: raise Exception("Can not delete title record")
+        with open(self.filelocation, "r+") as file:
+            for i in range(pk):
+                file.readline()
+            start = file.tell()
+            file.readline()
+            end = file.tell()
+            size=end-start-1
+            file.seek(start)
+            file.write(" "*size)
 
     def insert(self, **kwargs):
         self._type_checking(**kwargs)
         Table.insert(self, **kwargs)
 
+    @deprecated
     def from_database(self):
         """
         Returns Type compliant to defination of Table output from the database.
@@ -156,6 +203,10 @@ class FormattedTable(Table):
                 instance = obj(*args)
                 output.append(instance)
         return output
+
+    # def remove(self, **kwargs):
+    #     with open(self.filelocation, "r+") as file:
+            
 
 
 class AggregateOperations:
@@ -239,6 +290,13 @@ class AggregatableTable(FormattedTable):
                         break
                 if do_process_record == False: break
         return ans_copy
+
+    @staticmethod
+    def _features():
+        """
+        This method is used to update membership features to inform end-users of product.
+        """
+        return ["Data Aggregation"]
 
     def execute(self):
         """

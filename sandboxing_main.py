@@ -4,8 +4,7 @@ import logging
 import requests
 from collections import namedtuple
 from functools import reduce
-from utility import Table, FormattedTable, AggregatableTable, random_user_generator
-
+from backend import Table, FormattedTable, AggregatableTable, random_user_generator
 
 if __name__ == "__main__":
     # url = input("Enter the path: ")
@@ -39,11 +38,18 @@ if __name__ == "__main__":
     # print("[ANS1]", [i.pk for i in ans1], " [LEN OF ANS1]", len(ans1))
 
     # Access Exisiting Tables and perform all needed operations.
-    t = AggregatableTable.access_table("TestUserProfiles")
-    people = random_user_generator()
-    t.insert(**people)
+    # t = AggregatableTable.access_table("TestUserProfiles")
+    # people = random_user_generator()
+    # t.insert(**people)
     # t.aggregate.equal("pk", 9)
     # ans = t.execute()
     # print("[ANS]", [i.first_name for i in ans], " [LEN OF ANS]", len(ans))
-     
+
+    # Getting records with yield
+    t = AggregatableTable.access_table("TestUserProfiles")
+    # m = [i.pk for i in t.query(first_name = "Kamil", last_name="Panchal")]
+    # print(m)
+    
+    # delete record
+    # t.delete(28)
     # os.remove("database/" + "TestUserProfiles.txt")
