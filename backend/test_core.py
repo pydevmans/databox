@@ -1,6 +1,6 @@
 import os
 import unittest
-from utility import (Table, FormattedTable, AggregatableTable, 
+from backend import (Table, FormattedTable, AggregatableTable, 
                      TypeDoesntConfirmDefination,
                      random_user_generator, sw
                     )
@@ -58,7 +58,7 @@ class TestTable(unittest.TestCase):
 
 class TestFormattedTable(unittest.TestCase):
     def setUp(self):
-        self.t = FormattedTable("TestingTable", ("first_name:str", "last_name:str", "age:str",
+        self.t = FormattedTable("TestingTable", ("first_name:str", "last_name:str", "age:int",
                        "address:str", "telephone:str", "phone:str", "email:str"))
         self.user = random_user_generator()
 
@@ -66,12 +66,32 @@ class TestFormattedTable(unittest.TestCase):
         os.remove(self.t.filelocation)
         del self.t
         del self.user
+    
+    def test_read(self):
+        self.t.insert(**self.user)
+        from_database = self.t.from_database()
+        fetched_records = self.t.read()
+        self.assertEqual(fetched_records, from_database)
+
+    def test_query(self):
+        self.t.insert(**self.user)
+        output = self.t.query(first_name=self.user["first_name"], last_name=self.user["last_name"])[0]
+        self.assertEqual(output.age, self.user["age"])
+        self.assertEqual(output.phone, self.user["phone"])
+        self.assertEqual(output.telephone, self.user["telephone"])
+
+    def test_delete(self):
+        self.t.insert(**self.user)
+        self.t.delete(pk=1)
+        output = self.t.query(first_name = self.user["first_name"])
+        self.assertEqual(len(output), 0)
 
     def test_insert(self):
         """
         Checks upon inserting non-compliant datatype value for field of record, raises Exception.
         """
         with self.assertRaises(TypeDoesntConfirmDefination):
+            self.user["age"] = str(self.user["age"])
             self.t.insert(**self.user)
 
 class TestAggregatableTable(unittest.TestCase):

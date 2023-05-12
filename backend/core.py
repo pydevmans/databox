@@ -155,11 +155,17 @@ class FormattedTable(Table):
         return ["Type compliant"]
 
     def read(self):
-        lines = (line for line in open(self.filelocation, "r"))
-        records = (col for col in lines)
-        title_record = next(records)
+        """
+        This method access data in "r" mode and returns type compliant records.
+        """
+        lines = (line.rstrip() for line in open(self.filelocation, "r").readlines() if line.strip() != "")
+        cols = (cols.split("|") for cols in lines)
+        title_record = next(lines).split("|")
+        types = self.field_format.values()
+        types_field = (tuple(zip(types, field)) for field in cols)
         obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
-        return (obj(*args.split("|")) for args in records)
+        casted_args = ([i[0](i[1]) for i in item] for item in list(types_field))
+        return [obj(*i) for i in list(casted_args)]
 
     def query(self, **kwargs):
         def myfunc(record, **kwargs):
@@ -167,7 +173,7 @@ class FormattedTable(Table):
                 if getattr(record, key, None) != kwargs[key]:
                     return False
             return True
-        return filter(lambda rec: myfunc(rec, **kwargs), self.read())
+        return list(filter(lambda rec: myfunc(rec, **kwargs), self.read()))
 
     def delete(self, pk):
         if pk == 0: raise Exception("Can not delete title record")
@@ -185,7 +191,7 @@ class FormattedTable(Table):
         self._type_checking(**kwargs)
         Table.insert(self, **kwargs)
 
-    @deprecated
+    @deprecated(message="Prefer to use `self.read()` which uses generator based operations.")
     def from_database(self):
         """
         Returns Type compliant to defination of Table output from the database.
@@ -196,17 +202,13 @@ class FormattedTable(Table):
         with open(self.filelocation, mode="r") as file:
             for record in file.readlines()[1:]:
                 args = []
-                for index, val in enumerate(record.split(self.joiner)):
+                for index, val in enumerate(record.rstrip().split(self.joiner)):
                     if types_tuple[index] != str:
                         val = types_tuple[index](val)
                     args.append(val)
                 instance = obj(*args)
                 output.append(instance)
         return output
-
-    # def remove(self, **kwargs):
-    #     with open(self.filelocation, "r+") as file:
-            
 
 
 class AggregateOperations:

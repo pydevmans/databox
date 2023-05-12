@@ -24,7 +24,7 @@
 
     At the project directory level directory run the command,
 
-`py -m unittest utility\test_core.py`
+`py -m unittest backend\test_core.py`
 
 # Implement Web Interface
 

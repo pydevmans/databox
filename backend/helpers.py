@@ -75,11 +75,13 @@ def sw(field, pattern):
     if field.startswith(pattern): return True
     else: return False
 
-def deprecated(func):
-    def wrapper(*args, **kwargs):
-        print(f"The `{func.__qualname__}` function will be deprecated soon. Please update the code base at earliest convenience.")
-        return func(*args, **kwargs)
-    return wrapper
+def deprecated(message=""):
+    def outerwrapper(func):
+        def wrapper(*args, **kwargs):
+            print(f"The `{func.__qualname__}` function will be deprecated soon. {message}")
+            return func(*args, **kwargs)
+        return wrapper
+    return outerwrapper
 
 def myf(record):
     kwargs = { "last_name" : "Panchal", "first_name": "Sarah"}
