@@ -1,4 +1,6 @@
 database
 venv
+fe-databox/node_modules
+.coverage
 *.pyc
 */__pycache__
