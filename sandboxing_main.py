@@ -1,11 +1,11 @@
 import os
+import time
 import json
 import logging
 import requests
 from collections import namedtuple
 from functools import reduce
-from utility import Table, FormattedTable, AggregatableTable, random_user_generator
-
+from backend import Table, FormattedTable, AggregatableTable, random_user_generator
 
 if __name__ == "__main__":
     # url = input("Enter the path: ")
@@ -40,10 +40,29 @@ if __name__ == "__main__":
 
     # Access Exisiting Tables and perform all needed operations.
     t = AggregatableTable.access_table("TestUserProfiles")
-    people = random_user_generator()
-    t.insert(**people)
+    # people = random_user_generator()
+    # t.insert(**people)
     # t.aggregate.equal("pk", 9)
     # ans = t.execute()
     # print("[ANS]", [i.first_name for i in ans], " [LEN OF ANS]", len(ans))
-     
+
+    # Measuring time taken with generator based func
+    # t1 = time.perf_counter()
+    # m = t.read()
+    # t2 = time.perf_counter()
+    # print("[TIME TAKEN]", t2-t1)
+
+    # Getting records with yield
+    # t = AggregatableTable.access_table("TestUserProfiles")
+    # m = [i.pk for i in t.query(first_name = "Kamil", last_name="Panchal")]
+    # print(m)
+
+    # Measuring time taken with `from_database` method
+    # t3 = time.perf_counter()
+    # t.from_database()
+    # t4 = time.perf_counter()
+    # print("[TIME TAKEN]",t4-t3)
+    
+    # delete record
+    # t.delete(28)
     # os.remove("database/" + "TestUserProfiles.txt")

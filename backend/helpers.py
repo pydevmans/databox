@@ -1,4 +1,5 @@
 import random
+import hashlib
 from functools import reduce
 
 CAPITAL_LETTERS = (65, 90)
@@ -60,10 +61,31 @@ def random_user_generator():
     }
     return user
 
+def create_hash_password(password):
+    salt = b'\x1f\xd4\xb3\xbe\xa0\xe5\xe7\xc3\x92\x15\x13\x88;\x04\xf1\x140\xc4\xd8N\x99\xd6\x96\x06\xb7\xaf\xd9u\xed\x18\xf84'
+    hash  = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100000)
+    key = (salt + hash).hex()
+    return key
 
-def create_password(password):
-    return password
+def check_password(password, hash_orig_password):
+    if create_hash_password(password) == hash_orig_password: return True
+    else: return False
 
 def sw(field, pattern):
     if field.startswith(pattern): return True
     else: return False
+
+def deprecated(message=""):
+    def outerwrapper(func):
+        def wrapper(*args, **kwargs):
+            print(f"The `{func.__qualname__}` function will be deprecated soon. {message}")
+            return func(*args, **kwargs)
+        return wrapper
+    return outerwrapper
+
+def myf(record):
+    kwargs = { "last_name" : "Panchal", "first_name": "Sarah"}
+    for key in kwargs.keys():
+        if getattr(record, key, None) != kwargs[key]:
+            return False
+    else: return True
