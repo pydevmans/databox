@@ -15,3 +15,13 @@
     - testable code which assesses the func upon all the commits made to the branch `testing`
     - CI/CD implementation
     - DevOps implemented
+
+## Flow of the Code
+
+    Feature branch ---> Testing branch ---> Master branch
+
+## Running Tests
+
+    At the project directory level directory run the command,
+
+`py -m unittest utility\test_core.py`
