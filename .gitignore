@@ -1,4 +1,5 @@
-database
+# Ignore
+database/**/*
 venv
 fe-databox/node_modules
 .coverage
@@ -6,3 +7,6 @@ fe-databox/node_modules
 __pycache__
 */__pycache__
 fe-databox/node_modules
+
+# Allow
+!database/users.txt
