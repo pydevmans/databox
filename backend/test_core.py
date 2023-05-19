@@ -75,7 +75,7 @@ class TestFormattedTable(unittest.TestCase):
 
     def test_query(self):
         self.t.insert(**self.user)
-        output = self.t.query(first_name=self.user["first_name"], last_name=self.user["last_name"])[0]
+        output = self.t.query(first_name=self.user["first_name"])[0]
         self.assertEqual(output.age, self.user["age"])
         self.assertEqual(output.phone, self.user["phone"])
         self.assertEqual(output.telephone, self.user["telephone"])

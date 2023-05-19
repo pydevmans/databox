@@ -3,6 +3,7 @@ import time
 import json
 import logging
 import requests
+import tracemalloc
 from collections import namedtuple
 from functools import reduce
 from backend import Table, FormattedTable, AggregatableTable, random_user_generator
@@ -54,8 +55,13 @@ if __name__ == "__main__":
 
     # Getting records with yield
     # t = AggregatableTable.access_table("TestUserProfiles")
-    # m = [i.pk for i in t.query(first_name = "Kamil", last_name="Panchal")]
-    # print(m)
+    tracemalloc.start()
+    # m = t.query(first_name = "Rajat", last_name="Tatum")
+    t.aggregate.equal("first_name", "Rajat").equal("last_name","Tatum")
+    m = t.execute()
+    x = tracemalloc.get_traced_memory()
+    print("[Used Memory]", x)
+    print(len(m))
 
     # Measuring time taken with `from_database` method
     # t3 = time.perf_counter()

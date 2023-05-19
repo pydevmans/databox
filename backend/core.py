@@ -155,7 +155,7 @@ class FormattedTable(Table):
         """
         return ["Type compliant"]
 
-    def read(self):
+    def _read(self):
         """
         This method access data in "r" mode and returns type compliant records.
         """
@@ -166,15 +166,25 @@ class FormattedTable(Table):
         types_value = (tuple(zip(types, value)) for value in cols)
         casted_args = ([i[0](i[1]) for i in item] for item in types_value)
         obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
-        return [obj(*i) for i in casted_args]
+        return (obj(*i) for i in casted_args)
+
+    def read(self):
+        return list(self._read())
 
     def query(self, **kwargs):
-        def myfunc(record, **kwargs):
+        """
+        This method is here to provide one parameter lookup only.
+        Should need to aggregate by than one parameter, use `Table().aggregate`
+        methods instead.
+        """
+        if len(kwargs.keys()) >= 2:
+            raise Exception("Please use `Table().aggregate` methods for refined filter.")
+        def myfunc(obj, **kwargs):
             for key in kwargs.keys():
-                if getattr(record, key, None) != kwargs[key]:
+                if getattr(obj, key, None) != kwargs[key]:
                     return False
             return True
-        return list(filter(lambda rec: myfunc(rec, **kwargs), self.read()))
+        return list(filter(lambda obj: myfunc(obj, **kwargs), self._read()))
 
     def delete(self, pk):
         if pk == 0: raise Exception("Can not delete title record")
@@ -270,7 +280,11 @@ class AggregatableTable(FormattedTable):
         FormattedTable.__init__(self, tablename, columns)
         self.aggregate = AggregateOperations()
 
-    def _filter_records(self, iterable_of_records):
+    def _filter_record(self, record):
+        """
+        Preforms all the logical operations defined below on one record at time.
+        Returns: True/False
+        """
         hashmap_operation = {
             "lt": lt,
             "gt": gt,
@@ -279,25 +293,23 @@ class AggregatableTable(FormattedTable):
             "eq": eq,
             "sw": sw,
         }
-        ans_copy = []
-        # this for loop performs all the records from the database
-        for record in iterable_of_records:
-            # this for loop gets all `field`, `op` has provided to process
-            do_process_record = False
-            for field_aggr_key, field_aggr_value in self.aggregate.ops.items():
-                # this for loop performs all `Operation`s needed to be perform on field of records
-                for op in field_aggr_value:
-                    if hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]) == True:
-                        do_process_record = True
-                        continue
-                    else:
-                        do_process_record = False
-                        break
-                if do_process_record == False:
+        do_process_record = False
+        # this for loop gets all `field`, `op` has provided to process
+        for field_aggr_key, field_aggr_value in self.aggregate.ops.items():
+            # this for loop performs all `Operation`s needed to be perform on field of records
+            for op in field_aggr_value:
+                if hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]) == True:
+                    do_process_record = True
+                    continue
+                else:
+                    do_process_record = False
                     break
-            if do_process_record:
-                ans_copy.append(record)
-        return ans_copy
+            if do_process_record == False:
+                break
+        if do_process_record:
+            return True
+        return False
+
 
     @staticmethod
     def _features():
@@ -308,11 +320,9 @@ class AggregatableTable(FormattedTable):
 
     def execute(self):
         """
-        Performs all the `op` given to the field, to all records and returns only
-        record that passes the test.
-        When no `op` is provided, all records are returned.
+        Performs all the logical operation provided by user on Table.
+        Returns list of the query matching records.
         """
-        list_records = self.from_database()
-        output = self._filter_records(list_records)
+        output = list(filter(lambda x: self._filter_record(x), self._read()))
         self.aggregate.clear()
         return output

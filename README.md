@@ -24,7 +24,10 @@
 
     At the project directory level directory run the command,
 
-`py -m unittest backend\test_core.py`
+`py -m unittest backend/test_core.py`
+`coverage run -m unittest backend/test_core.py`
+`coverage report -m`
+`coverage html`
 
 # Implement Web Interface
 
@@ -88,13 +91,15 @@ Back End (flask):
 
 ## Ad Hoc commands to get started:
 
-`python3 -m venv venv`
+`python -m venv venv`
+
+`python -m pip install --upgrade pip`
 
 `source venv\Script\activate` (for linux) or
 
 `venv\Scripts\activate` (for Win 10)
 
-`pip install -r requirement.txt`
+`python -m pip install -r requirement.txt`
 
 `pip freeze > requirements.txt`
 
