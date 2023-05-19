@@ -1,7 +1,7 @@
 from enum import Enum
 from flask import request
 from flask_restful import abort, Resource, reqparse, fields, marshal_with
-from flask_login import login_required
+from flask_login import login_required, login_user, current_user, logout_user
 from backend import Table, FormattedTable, AggregatableTable, create_hash_password
 
 class MembershipTypes(Enum):
@@ -11,7 +11,7 @@ class MembershipTypes(Enum):
 
 users = AggregatableTable.access_table("users")
 
-users_fields = {
+users_profile_fields = {
     "first_name": fields.String,
     "last_name": fields.String,
     "username": fields.String,
@@ -20,23 +20,32 @@ users_fields = {
 }
 
 
-class User(Resource):
-    
-    def __init__(self):
-        self.is_authenticated = False
-        self.is_active = False
-        self.is_anonymous = None
-    
+class User:
+    def __init__(self, user):
+        self.username = user.username
+        self.email_address = user.email_address
+        self.first_name = user.first_name
+        self.last_name = user.last_name
+        self.password = user.password
+        self.membership = user.membership
+        
+        self.is_authenticated = True
+        self.is_active = True
+        self.is_anonymous = False
+
     def get_id(self):
-        users.aggregate.equal("username", username)
-        return users.username
+        return self.username
 
+class UserProfile(Resource):
     @login_required
-    @marshal_with(users_fields)
     def get(self, username):
-        return {"message": "Login Success"}
+        if current_user.username == username:
+            users_table = AggregatableTable.access_table("users")
+            return users_table.query(username=username)[0]
+        return {"message": "Not a valid URL!"}
 
-class UserCreation(Resource):
+
+class SignUp(Resource):
     def post(self):
         password = create_hash_password(request.form["password"])
         kwargs = request.form.to_dict()
@@ -45,14 +54,27 @@ class UserCreation(Resource):
         return {
             "message" : "request to add user was successsful."
         }
-
 class Login(Resource):
     def post(self):
-        pass
+        username = request.form["username"]
+        password = request.form["password"]
+        users_table = AggregatableTable.access_table("users")
+        user = users_table.query(username=username)
+        if not user:
+            raise Exception(f"User with username: `{username}` does not exist.")
+        user = User(user[0])
+        if user.password == create_hash_password(password):
+            resp = login_user(user, remember=True)
+            if resp:
+                return {"message": "Login Successful!"}
+        return {"message": "Please check your Credentials!"}
 
 class Logout(Resource):
-    def post(self):
-        pass
+    def get(self):
+        if current_user.is_authenticated:
+            logout_user()
+            return {"message":"Logout Successful!"}
+        return {"message":"Please check the URL!"}
 
 class Membership:
     def __init__(self, type = "free"):

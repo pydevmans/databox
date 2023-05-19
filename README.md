@@ -34,37 +34,59 @@
 - user login and password protection access
 - create the sophisticated HTML, css page, run it with Flask
 - Front End (Vue):
+
   - / (landing/info page)
   - /login
   - /signup
-  - /forget_password (L)
+  - /forget_password
   - /features
-  - /username (L)
+  - /users/`<username:str>`
     - list all the database
-  - /username/database (L)
+  - /users/`<username:str>`/profile
+    - list user's info
+  - /users/`<username:str>`/databases
+  - /users/`<username:str>`/databases/`<database:str>`
     - list records (view only)
     - append records
-  - /username/database/pk_record (L)
+  - /users/`<username:str>`/databases/`<database:str>`/pk_record
     - view the greyout form with option to edit
     - TBD update the record
 
-* (L) means Locked access. Valid credentials are needed.
+## Testing commands
 
-- Back End (flask):
-  - serves through all web request and direct backend request through api
-  - for API access, different protection mechanism has to be generated.
-- ## Microservice based:
-  - have 2 containers running, Vue and Flask. Vue serves the page and Flask serves the data.
-  - Have 2 different endpoint (production and testing)
-  - upon pushing code to testing, testing endpoint should run all the testing and if successful, have web access. If error is found generate logs to specific file.
-  - if testing is all good, can be pushed to production.
-  -
+- to sign up user
+
+  `curl http://127.0.0.1:5000/signup -d "first_name=Rajit" -d "last_name=Shah" -d "membership=1" -d "username=rj9" -d "email_address=rajshah9@icloud.com" -d "password=HelloWorld1!"`
+
+- to login user
+
+  `curl http://127.0.0.1:5000/login -X POST -d "username=rj9" -d "password=HelloWorld1!" -v`
+
+- to access protected endpoint
+  `curl --cookie "session=<session_key>" http://127.0.0.1:5000/test`
+  `document.cookie = "cookie_name=cookie_value"` (in browser's console)
+
+- to logout the user
+  `curl http://127.0.0.1:5000/logout`
+
+Back End (flask):
+
+- serves through all web request and direct backend request through api
+- for API access, different protection mechanism has to be generated.
+
+## Microservice based:
+
+- have 2 containers running, Vue and Flask. Vue serves the page and Flask serves the data.
+- Have 2 different endpoint (production and testing)
+- upon pushing code to testing, testing endpoint should run all the testing and if successful, have web access. If error is found generate logs to specific file.
+- if testing is all good, can be pushed to production.
+-
 
 ## Sources:
 
 - [Password Encryption Standard](https://www.ibm.com/docs/en/i/7.4?topic=security-password-encryption)
 
-## List of Commands:
+## Ad Hoc commands to get started:
 
 `python3 -m venv venv`
 

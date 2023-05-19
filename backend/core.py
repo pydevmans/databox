@@ -68,9 +68,10 @@ class Table:
         It wipes all the data and starts fresh.
         """
         with open(self.filelocation, mode="a") as file:
+            fields = list(map(lambda x: x.split(":")[0], self.columns))
             data = str(self.last_pk)
-            data = reduce(lambda x, y: x+self.joiner+str(y),
-                            kwargs.values(), data) + "\n"
+            data = reduce(lambda x, y: x+self.joiner+str(kwargs[y]),
+                            fields, data) + "\n"
             file.write(data)
         self.last_pk += 1
 
@@ -158,14 +159,14 @@ class FormattedTable(Table):
         """
         This method access data in "r" mode and returns type compliant records.
         """
-        lines = (line.rstrip() for line in open(self.filelocation, "r").readlines() if line.strip() != "")
+        lines = (line.rstrip() for line in open(self.filelocation, "r") if line.strip() != "")
         cols = (cols.split("|") for cols in lines)
-        title_record = next(lines).split("|")
+        title_record = next(lines)
         types = self.field_format.values()
-        types_field = (tuple(zip(types, field)) for field in cols)
+        types_value = (tuple(zip(types, value)) for value in cols)
+        casted_args = ([i[0](i[1]) for i in item] for item in types_value)
         obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
-        casted_args = ([i[0](i[1]) for i in item] for item in list(types_field))
-        return [obj(*i) for i in list(casted_args)]
+        return [obj(*i) for i in casted_args]
 
     def query(self, **kwargs):
         def myfunc(record, **kwargs):
@@ -191,7 +192,6 @@ class FormattedTable(Table):
         self._type_checking(**kwargs)
         Table.insert(self, **kwargs)
 
-    @deprecated(message="Prefer to use `self.read()` which uses generator based operations.")
     def from_database(self):
         """
         Returns Type compliant to defination of Table output from the database.
@@ -199,15 +199,16 @@ class FormattedTable(Table):
         obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
         types_tuple = tuple(self.field_format.values())
         output = []
-        with open(self.filelocation, mode="r") as file:
-            for record in file.readlines()[1:]:
-                args = []
-                for index, val in enumerate(record.rstrip().split(self.joiner)):
-                    if types_tuple[index] != str:
-                        val = types_tuple[index](val)
-                    args.append(val)
-                instance = obj(*args)
-                output.append(instance)
+        records = (record for record in open(self.filelocation, "r") if record.strip() != "")
+        title_line = next(records)
+        for record in records:
+            args = []
+            for index, val in enumerate(record.rstrip().split(self.joiner)):
+                if types_tuple[index] != str:
+                    val = types_tuple[index](val)
+                args.append(val)
+            instance = obj(*args)
+            output.append(instance)
         return output
 
 
@@ -278,19 +279,24 @@ class AggregatableTable(FormattedTable):
             "eq": eq,
             "sw": sw,
         }
-        ans_copy = deepcopy(iterable_of_records)
+        ans_copy = []
         # this for loop performs all the records from the database
         for record in iterable_of_records:
             # this for loop gets all `field`, `op` has provided to process
-            do_process_record = True
+            do_process_record = False
             for field_aggr_key, field_aggr_value in self.aggregate.ops.items():
                 # this for loop performs all `Operation`s needed to be perform on field of records
                 for op in field_aggr_value:
-                    if hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]) == False:
-                        ans_copy.remove(record)
-                        process_record = False
+                    if hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]) == True:
+                        do_process_record = True
+                        continue
+                    else:
+                        do_process_record = False
                         break
-                if do_process_record == False: break
+                if do_process_record == False:
+                    break
+            if do_process_record:
+                ans_copy.append(record)
         return ans_copy
 
     @staticmethod
@@ -310,4 +316,3 @@ class AggregatableTable(FormattedTable):
         output = self._filter_records(list_records)
         self.aggregate.clear()
         return output
-
