@@ -33,9 +33,9 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: Test with Unittest Along with Code Coverage applied
+      - name: Test with PyTest Along with Code Coverage applied
         run: |
-          coverage run -m unittest backend/test_core.py
+          coverage run -m pytest
       - name: Report of Code Coverage
         run: |
-          coverage report
+          coverage report -m
