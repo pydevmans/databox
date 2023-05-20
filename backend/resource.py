@@ -26,7 +26,7 @@ class User:
         self.first_name = user.first_name
         self.last_name = user.last_name
         self.password = user.password
-        self.membership = Membership(user.membership)
+        self.membership = Membership(int(user.membership))
         
         self.is_authenticated = True
         self.is_active = True

@@ -29,24 +29,21 @@ def test_anon_user_access(client):
     res3 = client.get("/logout")
     assert b'Please check the URL!' in res3.data
 
-    res4 = client.post("/login", data=dict(username="user", password="IncorrectPassword21!"),
-                follow_redirects=True)
+    res4 = client.post("/login", data=dict(username="user", password="IncorrectPassword21!"))
     assert b"Please check your Credentials!" in res4.data
 
     with pytest.raises(Exception) as excinfo:
-        client.post("/login", data=dict(username="test", password="HelloWorld1!"),
-                follow_redirects=True)
+        client.post("/login", data=dict(username="test", password="HelloWorld1!"))
 
 def test_logged_in_user(client):
 
-    res1 = client.post("/login", data=dict(username="user", password="HelloWorld2023!"),
-                follow_redirects=True)
+    res1 = client.post("/login", data=dict(username="user", password="HelloWorldzzzz2023!"))
     assert b"Login Successful!" in res1.data
-
 
     res3 = client.get("/users/user/profile")
     assert b"user" in res3.data
-    hash = create_hash_password("HelloWorld2023!")
+    assert b"Tetly" in res3.data
+    hash = create_hash_password("HelloWorldzzzz2023!")
     assert hash.encode() in res3.data
     
     res2 = client.get("/logout")
