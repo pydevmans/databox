@@ -6,8 +6,7 @@ import requests
 import tracemalloc
 from collections import namedtuple
 from functools import reduce
-from backend import Table, FormattedTable, AggregatableTable, random_user_generator
-
+from backend import Table, FormattedTable, AggregatableTable, random_user_generator, User
 if __name__ == "__main__":
     # url = input("Enter the path: ")
 
@@ -40,7 +39,7 @@ if __name__ == "__main__":
     # print("[ANS1]", [i.pk for i in ans1], " [LEN OF ANS1]", len(ans1))
 
     # Access Exisiting Tables and perform all needed operations.
-    t = AggregatableTable.access_table("TestUserProfiles")
+    t = AggregatableTable.access_table("users")
     # people = random_user_generator()
     # t.insert(**people)
     # t.aggregate.equal("pk", 9)
@@ -71,4 +70,8 @@ if __name__ == "__main__":
     
     # delete record
     # t.delete(28)
+    
+    # to get the User class obj
+    # args_gen = t._read()
+    # users = [User(args) for args in args_gen]
     # os.remove("database/" + "TestUserProfiles.txt")

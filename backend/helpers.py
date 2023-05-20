@@ -82,10 +82,3 @@ def deprecated(message=""):
             return func(*args, **kwargs)
         return wrapper
     return outerwrapper
-
-def myf(record):
-    kwargs = { "last_name" : "Panchal", "first_name": "Sarah"}
-    for key in kwargs.keys():
-        if getattr(record, key, None) != kwargs[key]:
-            return False
-    else: return True

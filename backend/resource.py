@@ -4,12 +4,11 @@ from flask_restful import abort, Resource, reqparse, fields, marshal_with
 from flask_login import login_required, login_user, current_user, logout_user
 from backend import Table, FormattedTable, AggregatableTable, create_hash_password
 
-class MembershipTypes(Enum):
+class Membership(Enum):
     free = 0
     basic = 1
     premium = 2
 
-users = AggregatableTable.access_table("users")
 
 users_profile_fields = {
     "first_name": fields.String,
@@ -27,7 +26,7 @@ class User:
         self.first_name = user.first_name
         self.last_name = user.last_name
         self.password = user.password
-        self.membership = user.membership
+        self.membership = Membership(user.membership)
         
         self.is_authenticated = True
         self.is_active = True
@@ -50,10 +49,14 @@ class SignUp(Resource):
         password = create_hash_password(request.form["password"])
         kwargs = request.form.to_dict()
         kwargs["password"] = password
-        users.insert(**kwargs)
+        kwargs["membership"] = int(kwargs["membership"])
+        users_table = AggregatableTable.access_table("users")
+        users_table.insert(**kwargs)
         return {
             "message" : "request to add user was successsful."
         }
+
+
 class Login(Resource):
     def post(self):
         username = request.form["username"]
@@ -76,9 +79,6 @@ class Logout(Resource):
             return {"message":"Logout Successful!"}
         return {"message":"Please check the URL!"}
 
-class Membership:
-    def __init__(self, type = "free"):
-        pass
 
 class MembershipFeatures(Resource):
     """

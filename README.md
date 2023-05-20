@@ -24,10 +24,9 @@
 
     At the project directory level directory run the command,
 
-`py -m unittest backend/test_core.py`
-`coverage run -m unittest backend/test_core.py`
-`coverage report -m`
-`coverage html`
+`coverage run -m pytest` (to run all tests)
+`coverage report -m` (to generate report in CLI)
+`coverage html` (to generate report in HTML Web Page)
 
 # Implement Web Interface
 
@@ -59,7 +58,7 @@
 
 - to sign up user
 
-  `curl http://127.0.0.1:5000/signup -d "first_name=Rajit" -d "last_name=Shah" -d "membership=1" -d "username=rj9" -d "email_address=rajshah9@icloud.com" -d "password=HelloWorld1!"`
+  `curl http://127.0.0.1:5000/signup -d "first_name=test" -d "last_name=tetly" -d "membership=1" -d "username=user1" -d "email_address=user1@icloud.com" -d "password=HelloWorld2023!"`
 
 - to login user
 

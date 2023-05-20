@@ -1,5 +1,5 @@
 import os
-from .helpers import sw, deprecated, myf
+from .helpers import sw, deprecated
 from copy import deepcopy
 from collections import namedtuple
 from functools import reduce
@@ -132,12 +132,13 @@ class FormattedTable(Table):
         Prevents mismatched datatype entry in Table.
         Raises `TypeDoesntConfirmDefination` when datatypes don't match.
         """
+        table_field_name = tuple(self.field_format.keys())[1:]
         table_field_types = tuple(self.field_format.values())[1:]
-        record_field_values = kwargs.values()
+        record_field_values = [kwargs[key_name] for key_name in table_field_name]
         _ = list(map(lambda a: type(a[0]) == a[1], zip(record_field_values, table_field_types)))
         if False in _ and _.count(False) == 1:
             index = _.index(False)
-            raise TypeDoesntConfirmDefination(f"The type for value does not match with '{self.columns[index]}' specification.")
+            raise TypeDoesntConfirmDefination(f"The type for value does not match with {self.columns[index]} specification.")
         elif _.count(False) >= 2:
             indexes = [index for index, val in enumerate(_) if val == False]
             raise TypeDoesntConfirmDefination(f"""The type for value does not match with 

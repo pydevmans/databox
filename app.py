@@ -25,10 +25,13 @@ api.add_resource(UserProfile, '/users/<string:username>/profile')
 # api.add_resource(, '/username/database')
 # api.add_resource(, '/username/database/<int:pk>')
 
+@app.route("/")
+def homepage():
+    return {"message":"Welcome to DataBox!!"}
+
 @app.route("/test")
 @login_required
 def test():
-
     return {"secret":"This is a Secret!"}
 
 
