@@ -1,0 +1,32 @@
+pk:int|first_name:str|last_name:str|age:int|Address:str|telephone:int|phone:int|email:str
+1|Kamil|Smith|33|4894 Snowbert street, Palitana, Manitoba, N2A 1D6 Canada|2328541|7054037152|kamil.smith656@icloud.com
+2|Rajat|Tatum|22|3402 Sandwich street, Paris, Alberta, A4I 5E6 Canada|3730124|5122640378|rajat.tatum485@gmail.com
+3|Rajat|Modi|123|3911 Chilly street, Kutch, Nova Scotia, O4R 0N8 Canada|3530684|5122051836|rajat.modi634@live.com
+4|Kalpit|Sandler|63|3532 Sandwich street, Paris, Manitoba, C4F 0I8 Canada|2153806|6475821047|kalpit.sandler331@yahoo.com
+5|Ramesh|Bhavsar|32|2283 Nevestein street, Kalol, Manitoba, N6A 5B4 Canada|3534708|6476805371|ramesh.bhavsar628@live.com
+6|Rajat|Modi|98|1713 Alshine street, Montreal, Nova Scotia, V7L 6R3 Canada|7832054|9084375826|rajat.modi259@protonmail.com
+7|Lee|Tatum|120|3333 Sandwich street, Nandoorbar, Ontario, A4R 1M3 Canada|2213640|5142431780|lee.tatum902@live.com
+8|Rajat|Bhavsar|28|2110 Nevestein street, Montreal, Saskatchewan, V2O 3C5 Canada|7108623|9087412053|rajat.bhavsar658@yahoo.com
+9|Sarah|Panchal|111|4740 Dunlop street, Ahmedabad, New Brunswick, A4L 5D7 Canada|2361724|2263085172|sarah.panchal25@protonmail.com
+10|Kamil|Panchal|15|4218 Sandwich street, Nandoorbar, Newfoundland and Labrador, L3X 2P5 Canada|7681504|2261423586|kamil.panchal415@yahoo.com
+11|Kajol|Gates|82|4845 Rapline street, Montreal, Manitoba, I7V 5X6 Canada|3368701|6476472358|kajol.gates292@protonmail.com
+12|Rajat|Sandler|72|4745 Alshine street, Palitana, British Columbia, U5L 3V2 Canada|3502731|5144125687|rajat.sandler492@yahoo.com
+13|Kalpit|Bhavsar|123|3222 Snowbert street, Windsor, Manitoba, X4R 2M5 Canada|2746053|2265816072|kalpit.bhavsar691@gmail.com
+14|Sarah|Panchal|36|4491 Rapline street, Montreal, Saskatchewan, X3V 5E7 Canada|2706481|5123082471|sarah.panchal586@live.com
+15|Kalpit|Bezos|41|4638 Rapline street, Montreal, Newfoundland and Labrador, H6G 4D0 Canada|3028631|6477584602|kalpit.bezos330@live.com
+16|Ramesh|Tatum|59|2684 Sandwich street, Ahmedabad, Nova Scotia, W6G 3H8 Canada|7175284|5123158720|ramesh.tatum135@protonmail.com
+17|Kajol|Tatum|91|449 Dunkirk street, Windsor, New Brunswick, F3H 5W0 Canada|7752368|5126218374|kajol.tatum333@live.com
+18|Ramesh|Modi|3|3000 Rapline street, Surrey, Alberta, T7C 4S0 Canada|3750283|5143546271|ramesh.modi212@gmail.com
+19|Kalpit|Gates|31|2693 Rankin street, Kalol, Manitoba, T5M 7K1 Canada|3564087|5120572138|kalpit.gates425@yahoo.com
+20|Sarah|Tatum|94|1494 Lavender street, Paris, Ontario, A5D 4C1 Canada|7120376|7054027685|sarah.tatum278@live.com
+21|Sarah|Bezos|30|496 Snowbert street, Paris, Quebec, Byye6K2 Canada|7738052|2266238701|sarah.bezos782@yahoo.com
+22|Kajol|Bhavsar|37|107 Snowbert street, Bhuj, New Brunswick, W7Q 2V0 Canada|7621035|9086035214|kajol.bhavsar683@yahoo.com
+23|Adam|Panchal|73|1742 Snowbert street, Bhuj, Prince Edward Island, E3Y 4O1 Canada|2237516|5142786340|adam.panchal463@protonmail.com
+24|Kamil|Modi|76|428 Dunkirk street, Paris, Newfoundland and Labrador, W3F 8H5 Canada|2456380|6472074153|kamil.modi948@protonmail.com
+25|Kamil|Modi|113|2452 Nevestein street, Ahmedabad, Ontario, X5K 4F8 Canada|7754638|7050136875|kamil.modi821@icloud.com
+26|Kalpit|Panchal|66|4670 Chilly street, Nandoorbar, Quebec, U4Q 7M3 Canada|2830271|6471702865|kalpit.panchal602@icloud.com
+27|Sarah|Bezos|45|1350 Nevestein street, Kalol, British Columbia, Q1M 7T3 Canada|2342716|5145163082|sarah.bezos491@protonmail.com
+28|Ramesh|Bezos|75|2151 Alshine street, Windsor, British Columbia, B1N 7C2 Canada|2145078|9085703421|ramesh.bezos399@gmail.com
+29|Ramesh|Modi|125|4420 Lavender street, London, Ontario, P1B 3L5 Canada|3365728|9080135647|ramesh.modi307@protonmail.com
+30|Sarah|Gates|49|2146 Alshine street, Paris, Nova Scotia, O7E 1W8 Canada|2102384|9086120374|sarah.gates55@gmail.com
+31|Kamil|Bezos|14|4493 Snowbert street, Nandoorbar, British Columbia, S3E 5L0 Canada|2715042|2260132567|kamil.bezos507@protonmail.com
