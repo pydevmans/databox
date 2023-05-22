@@ -10,3 +10,5 @@ fe-databox/node_modules
 
 # Allow
 !database/users.txt
+!database/usernames/user/profiles.txt
+!database/usernames/user/backup.txt

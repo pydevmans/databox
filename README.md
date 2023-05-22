@@ -1,58 +1,38 @@
 # Databox Web Application Service
 
-## Purpose
-
-    This web application allows user to create the relations database and perform aggregation operation on it through web interface.
-
-## Features
-
-    - Ceate, Delete, Update and Read Relation Database
-    - a monitor to maintain the size of the database to the optimal size and perform necessary rebuilts.
-    - Scalable in term of divide and conquer technique to perform aggregation in reasonable time
-        + leverage the multi-process to do all aggregation
-        + provide API to access the data fetched/aggregated
-    - Live testable on machine in containerised format
-    - testable code which assesses the func upon all the commits made to the branch `testing`
-    - CI/CD implementation
-    - DevOps implemented
-
-## Flow of the Code
-
-    Feature branch ---> Testing branch ---> Master branch
-
-## Running Tests
+## Running Tests and getting Test Coverage report
 
     At the project directory level directory run the command,
 
-`coverage run -m pytest` (to run all tests)
-`coverage report -m` (to generate report in CLI)
-`coverage html` (to generate report in HTML Web Page)
+- `coverage run -m pytest` (to run all tests)
+- `coverage report -m` (to generate report in CLI)
+- `coverage html` (to generate report in HTML Web Page)
 
-# Implement Web Interface
+## API End points:
 
-## Features
-
-- serves through web interface and api endpoints
-- user login and password protection access
-- create the sophisticated HTML, css page, run it with Flask
-- Front End (Vue):
-
-  - / (landing/info page)
-  - /login
-  - /signup
-  - /forget_password
-  - /features
-  - /users/`<username:str>`
-    - list all the database
-  - /users/`<username:str>`/profile
-    - list user's info
-  - /users/`<username:str>`/databases
-  - /users/`<username:str>`/databases/`<database:str>`
-    - list records (view only)
-    - append records
-  - /users/`<username:str>`/databases/`<database:str>`/pk_record
-    - view the greyout form with option to edit
-    - TBD update the record
+- /
+  - `get`: List all the features of the Service
+- /signup
+  - `post`: Pass (first_name, last_name, membership, username, email_address, password) to sign up.
+- /login
+  - `post`: Pass (username, password) to login to account
+  <!-- - /forget_password -->
+- /logout
+  - `post`: To log the user out
+- /features
+  - `get`: Lists features of 3 Membership types.
+- /users/`<username:str>`/profile
+  - `get`: list user's info
+- /users/`<username:str>`/databases
+  - `get`: list all the database
+  - `delete`: delete all the <B>databases</B>
+- /users/`<username:str>`/databases/`<database:str>`
+  - `get`: list records (view only)
+  - `put`: rename the `database`
+  - `delete`: delete the `database`
+- /users/`<username:str>`/databases/`<database:str>`/pk_record
+  - `get`: returns the specified record of the database
+  - `delete`: deletes the specified record from the database
 
 ## Testing commands
 
@@ -62,7 +42,7 @@
 
 - to login user
 
-  `curl http://127.0.0.1:5000/login -X POST -d "username=rj9" -d "password=HelloWorld1!" -v`
+  `curl http://127.0.0.1:5000/login -X POST -d "username=user" -d "password=HelloWorld2023!" -v`
 
 - to access protected endpoint
   `curl --cookie "session=<session_key>" http://127.0.0.1:5000/test`
@@ -70,19 +50,6 @@
 
 - to logout the user
   `curl http://127.0.0.1:5000/logout`
-
-Back End (flask):
-
-- serves through all web request and direct backend request through api
-- for API access, different protection mechanism has to be generated.
-
-## Microservice based:
-
-- have 2 containers running, Vue and Flask. Vue serves the page and Flask serves the data.
-- Have 2 different endpoint (production and testing)
-- upon pushing code to testing, testing endpoint should run all the testing and if successful, have web access. If error is found generate logs to specific file.
-- if testing is all good, can be pushed to production.
--
 
 ## Sources:
 

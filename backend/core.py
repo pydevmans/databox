@@ -1,17 +1,20 @@
 import os
+import itertools
+from math import ceil
 from .helpers import sw, deprecated
 from copy import deepcopy
 from collections import namedtuple
 from functools import reduce
 from operator import lt, gt, eq, ge, le
+from werkzeug.exceptions import HTTPException
 
-class InvalidPropException(Exception):
+class InvalidPropException(HTTPException):
     pass
 
-class NotAValidFieldType(Exception):
+class NotAValidFieldType(HTTPException):
     pass
 
-class TypeDoesntConfirmDefination(Exception):
+class TypeDoesntConfirmDefination(HTTPException):
     pass
 
 class Table:
@@ -24,11 +27,11 @@ class Table:
                 columns: tuple(field_name:field_type) -> ("Name:str","Address:str", ...)
                 joiner: string -> "|" or "," etc...
         """
-        self.tablename = tablename
+        self.tablename = tablename if not "/" in tablename else tablename.split("/")[-1]
         self.columns = columns
         self.last_pk = 1
         self.joiner = joiner
-        self.filelocation = "database/" + self.tablename + ".txt"
+        self.filelocation = "database/" + tablename + ".txt"
         self._insert(*self.columns)
 
     def __str__(self):
@@ -65,7 +68,6 @@ class Table:
         """
         Inserts record to the database when intialising it
         Converts all the field to `str(field)` before inserting into database.
-        It wipes all the data and starts fresh.
         """
         with open(self.filelocation, mode="a") as file:
             fields = list(map(lambda x: x.split(":")[0], self.columns))
@@ -88,6 +90,36 @@ class Table:
         file.close()
         obj.last_pk = len(lines)
         return obj
+
+
+class Paginator:
+    def __init__(self, resource, items_on_page=5):
+        """
+        Page for Paginator starts from `1` to the last page where last record can be found.
+        """
+        self.resource = resource
+        self.current_page = 1
+        self.items_on_page = items_on_page
+        self.total_page = ceil(len(self.resource) / self.items_on_page)
+
+    def has_prev_page(self):
+        if (self.current_page - 1) > 0: return True
+        else: return False
+
+    def has_next_page(self):
+        if (self.current_page + 1) < self.total_page: return True
+        else: return False
+
+    def serve(self, page):
+        if page > self.total_page:
+            raise HTTPException(f"Please make sure `page` is within `1 <= page <= {self.total_page})`.")
+        start = (page - 1) * self.items_on_page
+        end = (page * self.items_on_page) - 1
+        output = []
+        for item in itertools.islice(self.resource, start, end, step=1):
+            output.append(item)
+        return output
+
 
 class FormattedTable(Table):
     def __init__(self, tablename, columns, joiner="|"):
@@ -175,11 +207,11 @@ class FormattedTable(Table):
     def query(self, **kwargs):
         """
         This method is here to provide one parameter lookup only.
-        Should need to aggregate by than one parameter, use `Table().aggregate`
+        Should need to aggregate by more than one parameter, use `Table().aggregate`
         methods instead.
         """
         if len(kwargs.keys()) >= 2:
-            raise Exception("Please use `Table().aggregate` methods for refined filter.")
+            raise HTTPException("Please use `Table().aggregate` methods for refined filter.")
         def myfunc(obj, **kwargs):
             for key in kwargs.keys():
                 if getattr(obj, key, None) != kwargs[key]:
@@ -188,7 +220,7 @@ class FormattedTable(Table):
         return list(filter(lambda obj: myfunc(obj, **kwargs), self._read()))
 
     def delete(self, pk):
-        if pk == 0: raise Exception("Can not delete title record")
+        if pk == 0: raise HTTPException("Can not delete title record")
         with open(self.filelocation, "r+") as file:
             for i in range(pk):
                 file.readline()

@@ -1,14 +1,25 @@
+import os
+import shutil
 from enum import Enum
 from flask import request
 from flask_restful import abort, Resource, reqparse, fields, marshal_with
 from flask_login import login_required, login_user, current_user, logout_user
-from backend import Table, FormattedTable, AggregatableTable, create_hash_password
+from backend import ( 
+    Table, FormattedTable, AggregatableTable, create_hash_password, is_users_content,
+    error_400, error_401, error_403, error_404
+    )
+from werkzeug.exceptions import HTTPException
 
 class Membership(Enum):
     free = 0
     basic = 1
     premium = 2
 
+hashmap_class = {
+    "free": Table,
+    "basic": FormattedTable,
+    "premium": AggregatableTable,
+}
 
 users_profile_fields = {
     "first_name": fields.String,
@@ -18,6 +29,32 @@ users_profile_fields = {
     "membership": fields.Integer
 }
 
+class HomePage(Resource):
+    def get(self):
+        return {
+            "title":"Welcome to DataBox!!",
+            "application-features": [
+                "Relational Database style `CRD` performant file based Database service",
+                "int, str, float, secret(in hashable format) and unique field types",
+                "3 types of Membership to access Service",
+                "RESTful API Endpoint to utilize service",
+                "Responses are in JSON, hence Incorporable with Any Tech Stack",
+                "Containerised light weight application",
+                "Atleast 85% of the test coverage for each modu",
+                ],
+            "key-highlight": [
+                "Constant memory utilisation regardless of size of the database",
+                "Constant time Lookup, Indexing of data regardless of size of the database",
+                "Constant time lookup with Primary Key or Pagination regardless of size of the database",
+                "Efficient Aggregation with as many criteria upon any/many field(s) of database",
+                ],
+            "tech-stacks": [
+              "Flask",
+              "Flask-Login",
+              "Flask-RESTful",
+              "pytest",
+            ],
+        }
 
 class User:
     def __init__(self, user):
@@ -37,11 +74,10 @@ class User:
 
 class UserProfile(Resource):
     @login_required
+    @is_users_content
     def get(self, username):
-        if current_user.username == username:
-            users_table = AggregatableTable.access_table("users")
-            return users_table.query(username=username)[0]
-        return {"message": "Not a valid URL!"}
+        users_table = AggregatableTable.access_table("users")
+        return users_table.query(username=username)[0]
 
 
 class SignUp(Resource):
@@ -51,7 +87,10 @@ class SignUp(Resource):
         kwargs["password"] = password
         kwargs["membership"] = int(kwargs["membership"])
         users_table = AggregatableTable.access_table("users")
-        users_table.insert(**kwargs)
+        try:
+            users_table.insert(**kwargs)
+        except:
+            return error_400
         return {
             "message" : "request to add user was successsful."
         }
@@ -64,10 +103,10 @@ class Login(Resource):
         users_table = AggregatableTable.access_table("users")
         user = users_table.query(username=username)
         if not user:
-            raise Exception(f"User with username: `{username}` does not exist.")
+            raise HTTPException(f"User with username: `{username}` does not exist.")
         user = User(user[0])
         if user.password == create_hash_password(password):
-            resp = login_user(user, remember=True)
+            resp = login_user(user)
             if resp:
                 return {"message": "Login Successful!"}
         return {"message": "Please check your Credentials!"}
@@ -91,4 +130,71 @@ class MembershipFeatures(Resource):
             "basic_feats" : FormattedTable._features(),
             "premium_feats" : AggregatableTable._features(),
         }
+
+
+class UserDatabases(Resource):
+    @login_required
+    @is_users_content
+    def get(self, username):
+        return os.listdir(f"database/usernames/{username}")
+
+    @login_required
+    @is_users_content
+    def delete(self, username):
+        shutil.rmtree(f"database/usernames/{username}")
+        return {"message": "Successfully removed All Database"}
+
+class UserDatabase(Resource):
+    @login_required
+    @is_users_content
+    def get(self, username, database):
+        file = open(f"database/usernames/{username}/{database}.txt")
+        lines = file.readlines()
+        file.close()
+        return lines
+
+    @login_required
+    @is_users_content
+    def put(self, username, database):
+        name = request.form["database"]
+        os.rename(
+            f"database/usernames/{username}/{database}.txt",
+            f"database/usernames/{username}/{name}.txt"
+        )
+        return {
+            "message":
+                f"Successfully renamed to `database/usernames/{username}/{database}.txt`"
+            }
+
+    @login_required
+    @is_users_content
+    def delete(self, username, database):
+        os.remove(f"database/usernames/{username}/{database}.txt")
+        return {"message": f"Successfully removed {database} Database"}
+
+class InteracDatabase(Resource):
+    @login_required
+    @is_users_content
+    def get(self, username, database, pk):
+        table = hashmap_class.get(current_user.membership.name, None)
+        table = table.access_table(f"usernames/{username}/{database}")
+        try:
+            record = table.query(pk=pk)
+        except AttributeError:
+            return {
+                "message":f"""Current Plan: `{current_user.membership.name.capitalize()}`
+                does not have sufficient features. Please upgrade the plan."""
+                }
+        return record
+
+    @login_required
+    @is_users_content
+    def delete(self, username, database, pk):
+        table = hashmap_class.get(current_user.membership.name, None)
+        table = table.access_table(f"usernames/{username}/{database}")
+        try:
+            record = table.delete(pk=pk)
+        except AttributeError:
+            return {"message":f"Current Plan: {table.__class__} does not have sufficient features. Upgrade the plan."}
+        return {"message": f"Successfully removed {database} Database"}
 

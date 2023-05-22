@@ -1,14 +1,16 @@
 import os
+import shutil
 import pytest
 from backend import (Table, FormattedTable, AggregatableTable, 
                      TypeDoesntConfirmDefination,
                      random_user_generator, sw
-                    )
+    )
 from functools import reduce
 from collections import namedtuple
 from app import app
 from flask_login import login_manager
 from backend import create_hash_password
+from werkzeug.exceptions import HTTPException
 
 @pytest.fixture
 def client():
@@ -16,40 +18,28 @@ def client():
     with app.test_client() as client:
         yield client
 
-def test_anon_user_access(client):
-    res = client.get("/")
-    assert b'Welcome to DataBox!!' in res.data
-    
-    res1 = client.get("/test")
-    assert b'401 Unauthorized' in res1.data
-
-    res2 = client.get("/login")
-    assert b'The method is not allowed for the requested URL.' in res2.data
-
-    res3 = client.get("/logout")
-    assert b'Please check the URL!' in res3.data
-
-    res4 = client.post("/login", data=dict(username="user", password="IncorrectPassword21!"))
-    assert b"Please check your Credentials!" in res4.data
-
-    with pytest.raises(Exception) as excinfo:
-        client.post("/login", data=dict(username="test", password="HelloWorld1!"))
-
-def test_logged_in_user(client):
-
-    res1 = client.post("/login", data=dict(username="user", password="HelloWorldzzzz2023!"))
+@pytest.fixture
+def logged_user_client(client):
+    res1 = client.post("/login",  data=dict(username="user", password="HelloWorld2023!"))
     assert b"Login Successful!" in res1.data
+    shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/test.txt")
+    yield client
+    os.remove("database/usernames/user/test.txt")
 
-    res3 = client.get("/users/user/profile")
-    assert b"user" in res3.data
-    assert b"Tetly" in res3.data
-    hash = create_hash_password("HelloWorldzzzz2023!")
-    assert hash.encode() in res3.data
-    
-    res2 = client.get("/logout")
-    assert b"Logout Successful!" in res2.data
+def test_homepage(client):
+    res1 = client.get("/")
+    assert b"title" in res1.data
+    assert b"application-features" in res1.data
+    assert b"key-highlight" in res1.data
+    assert b"tech-stacks" in res1.data
 
-def test_signup_user(client):
+def test_userprofile(logged_user_client):
+    res = logged_user_client.get("users/user/profile")
+    assert b"user" in res.data
+    assert b"Tetly" in res.data
+    assert b"Something went wrong! Please check the URL" not in res.data
+
+def test_signup(client):
     res1 = client.post("/signup", data=dict(
         username = "another_user", 
         password = "HelloWorldzzzz2023!",
@@ -61,10 +51,69 @@ def test_signup_user(client):
         follow_redirects=True
     )
     assert b"request to add user was successsful." in res1.data
+
+def test_login(client):
+    res = client.post("/login", data=dict(username="user", password="IncorrectPassword21!"))
+    assert b"Please check your Credentials!" in res.data
     
+def test_logout(logged_user_client):
+    res = logged_user_client.get("/logout")
+    assert b"Logout Successful!" in res.data
+    assert b"Please check the URL!" not in res.data
+
 def test_features(client):
-    res1 = client.get("/features")
-    assert b"free_feats" in res1.data
-    assert b"basic_feats" in res1.data
-    assert b"premium_feats" in res1.data
+    res = client.get("/features")
+    assert b"free_feats" in res.data
+    assert b"basic_feats" in res.data
+    assert b"premium_feats" in res.data
+
+def test_userdatabases(logged_user_client):
+    res1 = logged_user_client.get("/users/user/databases")
+    assert b"profiles" in res1.data
+    res2 = logged_user_client.put("/users/user/databases", data=dict(database="newname"))
+    assert b"method is not allowed" in res2.data
+    res3 = logged_user_client.post("/users/user/databases")
+    assert b"method is not allowed" in res3.data
+
+def test_user_database(logged_user_client):
+    res1 = logged_user_client.get("/users/user/databases/test")
+    assert b"pk:int|first_name:str|last_name:str|age:int|Address:str|telephone:int|phone:int|email:str" in res1.data
+    shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/sample.txt")
+    res2 = logged_user_client.put("/users/user/databases/sample", data=dict(database="helloworld"))
+    assert b"Successfully renamed" in res2.data
+    res3 = logged_user_client.delete("/users/user/databases/helloworld")
+    assert b"Successfully removed" in res3.data
+    res4 = logged_user_client.get("/users/anotheruser/databases")
+    assert b"Access Unauthorized! Client does not have right to access." in res4.data
+
+
+def test_interacdatabase(logged_user_client):
+    res1 = logged_user_client.get("/users/user/databases/test/2")
+    assert b"3402 Sandwich street, Paris, Alberta, A4I 5E6 Canada" in res1.data
+    
+    res2 = logged_user_client.delete("/users/user/databases/test/2")
+    assert b"Successfully removed" in res2.data
+
+def test_userdatabases_loggedout(client):
+    res1 = client.get("/users/user/databases")
+    assert b"You either supplied the wrong credentials (e.g. a bad password)" in res1.data
+    res2 = client.put("/users/user/databases", data=dict(database="newname"))
+    assert b"method is not allowed" in res2.data
+    res3 = client.post("/users/user/databases")
+    assert b"method is not allowed" in res3.data
+
+def test_user_database_loggedout(client):
+    res1 = client.get("/users/user/databases/test")
+    assert b"You either supplied the wrong credentials (e.g. a bad password)" in res1.data
+    res2 = client.put("/users/user/databases/test1", data=dict(database="helloworld"))
+    assert b"You either supplied the wrong credentials (e.g. a bad password)" in res2.data
+    res3 = client.delete("/users/user/databases/test1")
+    assert b"You either supplied the wrong credentials (e.g. a bad password)" in res3.data
+
+def test_interacdatabase_loggedout(client):
+    res1 = client.get("/users/user/databases/test/2")
+    assert b"You either supplied the wrong credentials (e.g. a bad password)" in res1.data
+    
+    res2 = client.delete("/users/user/databases/test/2")
+    assert b"You either supplied the wrong credentials (e.g. a bad password)" in res2.data
 
