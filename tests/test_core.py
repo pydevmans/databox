@@ -1,21 +1,33 @@
 import os
 import shutil
 import unittest
-from backend import (Table, FormattedTable, AggregatableTable, 
-                     TypeDoesntConfirmDefination,
-                     random_user_generator, sw, Process_QS
-                    )
-from collections import namedtuple
+from backend import (
+    Table,
+    FormattedTable,
+    AggregatableTable,
+    TypeDoesntConfirmDefination,
+    random_user_generator,
+    Process_QS,
+)
 from functools import reduce
-from operator import le, gt, ne, lt, ge, le
+from operator import gt, ge, le
 from werkzeug.exceptions import HTTPException
 
 
 class TestTable(unittest.TestCase):
-
     def setUp(self):
-        self.t = Table("TestingTable", ("first_name:str", "last_name:str", "age:str",
-                       "address:str", "telephone:int", "phone:int", "email:str"))
+        self.t = Table(
+            "TestingTable",
+            (
+                "first_name:str",
+                "last_name:str",
+                "age:str",
+                "address:str",
+                "telephone:int",
+                "phone:int",
+                "email:str",
+            ),
+        )
         self.user = random_user_generator()
 
     def tearDown(self):
@@ -35,10 +47,18 @@ class TestTable(unittest.TestCase):
         Since type checking is not the feature for this class, for `age:str` no error will be raised.
         """
         self.t.insert(**self.user)
-        dataset = (self.user["first_name"], self.user["last_name"], self.user["age"],
-                   self.user["address"], self.user["telephone"], self.user["phone"], self.user["email"])
-        title_on_test_data = f'1' + \
-            reduce(lambda a, b: a + self.t.joiner + str(b), dataset, "") + '\n'
+        dataset = (
+            self.user["first_name"],
+            self.user["last_name"],
+            self.user["age"],
+            self.user["address"],
+            self.user["telephone"],
+            self.user["phone"],
+            self.user["email"],
+        )
+        title_on_test_data = (
+            "1" + reduce(lambda a, b: a + self.t.joiner + str(b), dataset, "") + "\n"
+        )
         with open(self.t.filelocation, mode="r") as file:
             title_on_file = file.readlines()
             self.assertEqual(title_on_file[-1], title_on_test_data)
@@ -54,22 +74,33 @@ class TestTable(unittest.TestCase):
     def test_access_table_raise_exception(self):
         """
         Tests access_table method tests,
-            if non-existing file raises `FileNotFoundError` error, 
+            if non-existing file raises `FileNotFoundError` error,
         """
         with self.assertRaises(FileNotFoundError):
-            table_instance = self.t.access_table(self.t.tablename + "mismatchpart")
+            self.t.access_table(self.t.tablename + "mismatchpart")
+
 
 class TestFormattedTable(unittest.TestCase):
     def setUp(self):
-        self.t = FormattedTable("TestingTable", ("first_name:str", "last_name:str", "age:int",
-                       "address:str", "telephone:str", "phone:str", "email:str"))
+        self.t = FormattedTable(
+            "TestingTable",
+            (
+                "first_name:str",
+                "last_name:str",
+                "age:int",
+                "address:str",
+                "telephone:str",
+                "phone:str",
+                "email:str",
+            ),
+        )
         self.user = random_user_generator()
 
     def tearDown(self):
         os.remove(self.t.filelocation)
         del self.t
         del self.user
-    
+
     def test_read(self):
         self.t.insert(**self.user)
         from_database = self.t.from_database()
@@ -86,7 +117,7 @@ class TestFormattedTable(unittest.TestCase):
     def test_delete(self):
         self.t.insert(**self.user)
         self.t.delete(pk=1)
-        output = self.t.query(first_name = self.user["first_name"])
+        output = self.t.query(first_name=self.user["first_name"])
         self.assertEqual(len(output), 0)
 
     def test_insert(self):
@@ -97,10 +128,22 @@ class TestFormattedTable(unittest.TestCase):
             self.user["age"] = str(self.user["age"])
             self.t.insert(**self.user)
 
+
 class TestIncorrectFormattedTable(unittest.TestCase):
     def test_creating_table(self):
-        self.t = FormattedTable("TestingTable", ("first_name:str", "last_name:str", "age:float",
-            "address:str", "telephone:str", "phone:str", "email:str", "is_married:bool"))
+        self.t = FormattedTable(
+            "TestingTable",
+            (
+                "first_name:str",
+                "last_name:str",
+                "age:float",
+                "address:str",
+                "telephone:str",
+                "phone:str",
+                "email:str",
+                "is_married:bool",
+            ),
+        )
         self.user = random_user_generator()
         self.user["age"] = 12.44
         self.user["is_married"] = False
@@ -108,21 +151,36 @@ class TestIncorrectFormattedTable(unittest.TestCase):
         with self.assertRaises(HTTPException):
             self.t.insert(**self.user)
 
+
 class TestAggregatableTable(unittest.TestCase):
     """
     This class tests all the aggregation operation.
     For numbers 5 logical comparison `<,>,=,<=,>=` are made,
     For str `len(string)` is considered to compare.
     """
+
     def setUp(self):
-        self.t = AggregatableTable("TestingTable", ("first_name:str", "last_name:str", "age:int",
-                       "address:str", "telephone:str", "phone:str", "email:str"))
+        self.t = AggregatableTable(
+            "TestingTable",
+            (
+                "first_name:str",
+                "last_name:str",
+                "age:int",
+                "address:str",
+                "telephone:str",
+                "phone:str",
+                "email:str",
+            ),
+        )
         self.user = {
-                        'first_name': 'Adam', 'last_name': 'Smith', 'age': 30,
-                        'address': '2158 Cavendish street, Surrey, Ontario, Y4S 1E8 Canada',
-                        'telephone': '7168423', 'phone': '2263076421',
-                        'email': 'adam.smith346@icloud.com'
-                    }
+            "first_name": "Adam",
+            "last_name": "Smith",
+            "age": 30,
+            "address": "2158 Cavendish street, Surrey, Ontario, Y4S 1E8 Canada",
+            "telephone": "7168423",
+            "phone": "2263076421",
+            "email": "adam.smith346@icloud.com",
+        }
         self.t.insert(**self.user)
 
     def tearDown(self):
@@ -136,12 +194,12 @@ class TestAggregatableTable(unittest.TestCase):
 
     def test_less_than(self):
         records = self.get_records()
-        
+
         self.t.aggregate.add_operation("age", 40, "lt")
         self.t.aggregate.add_operation("age", 20, "gt")
         instances = self.t.execute()
         self.assertEqual(instances, records)
-        
+
         self.t.aggregate.add_operation("age", 25, "lt")
         instances_1 = self.t.execute()
         self.assertNotEqual(instances_1, records)
@@ -156,7 +214,7 @@ class TestAggregatableTable(unittest.TestCase):
         self.t.aggregate.add_operation("age", 40, "gt")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
-        
+
         self.t.aggregate.add_operation("age", 25, "gt")
         instances_1 = self.t.execute()
         self.assertEqual(instances_1, records)
@@ -171,7 +229,7 @@ class TestAggregatableTable(unittest.TestCase):
         self.t.aggregate.add_operation("age", 40, "le")
         instances = self.t.execute()
         self.assertEqual(instances, records)
-        
+
         self.t.aggregate.add_operation("age", 25, "le")
         instances_1 = self.t.execute()
         self.assertNotEqual(instances_1, records)
@@ -186,7 +244,7 @@ class TestAggregatableTable(unittest.TestCase):
         self.t.aggregate.add_operation("age", 40, "ge")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
-        
+
         self.t.aggregate.add_operation("age", 25, "ge")
         instances_1 = self.t.execute()
         self.assertEqual(instances_1, records)
@@ -201,7 +259,7 @@ class TestAggregatableTable(unittest.TestCase):
         self.t.aggregate.add_operation("age", 40, "eq")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
-        
+
         self.t.aggregate.add_operation("age", 25, "eq")
         instances_1 = self.t.execute()
         self.assertNotEqual(instances_1, records)
@@ -212,7 +270,7 @@ class TestAggregatableTable(unittest.TestCase):
 
     def test_starts_with(self):
         records = self.get_records()
-        
+
         self.t.aggregate.add_operation("first_name", "Ad", "sw")
         instances = self.t.execute()
         self.assertEqual(instances, records)
@@ -220,36 +278,42 @@ class TestAggregatableTable(unittest.TestCase):
         self.t.aggregate.add_operation("first_name", "Pk", "sw")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
-        
+
+
 class Test_Process_QS_Pagination(unittest.TestCase):
     def setUp(self):
-        shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/test.txt")
+        shutil.copy(
+            "database/usernames/user/backup.txt", "database/usernames/user/test.txt"
+        )
         self.t = AggregatableTable.access_table("usernames/user/test")
 
     def tearDown(self):
         del self.t
         os.remove("database/usernames/user/test.txt")
-    
+
     def test_process(self):
-        qs="page=2&page-size=5"
+        qs = "page=2&page-size=5"
         output = Process_QS(qs, self.t).process()
         assert len(output["data"]) == 5
         assert output["next_page"] == 3
         assert output["prev_page"] == 1
-    
+
     def test_proces_1(self):
         qs = "page-2"
         with self.assertRaises(HTTPException):
-            output = Process_QS(qs, self.t).process()
+            Process_QS(qs, self.t).process()
 
     def test_proces_2(self):
         qs = "page-size=2"
         with self.assertRaises(HTTPException):
-            output = Process_QS(qs, self.t).process()
+            Process_QS(qs, self.t).process()
+
 
 class Test_Process_QS_URL_Search_Param(unittest.TestCase):
     def setUp(self):
-        shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/test.txt")
+        shutil.copy(
+            "database/usernames/user/backup.txt", "database/usernames/user/test.txt"
+        )
         self.t = AggregatableTable.access_table("usernames/user/test")
 
     def tearDown(self):
@@ -263,4 +327,3 @@ class Test_Process_QS_URL_Search_Param(unittest.TestCase):
         assert all(ge(i.pk, 10) for i in output)
         assert all(gt(i.age, 18) for i in output)
         assert all(le(i.age, 55) for i in output)
-
