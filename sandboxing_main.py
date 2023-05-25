@@ -6,7 +6,9 @@ import requests
 import tracemalloc
 from collections import namedtuple
 from functools import reduce
-from backend import Table, FormattedTable, AggregatableTable, random_user_generator, User
+from backend import (Table, FormattedTable, AggregatableTable,
+    random_user_generator, User, Paginator)
+
 if __name__ == "__main__":
     # url = input("Enter the path: ")
 
@@ -54,13 +56,13 @@ if __name__ == "__main__":
 
     # Getting records with yield
     # t = AggregatableTable.access_table("TestUserProfiles")
-    tracemalloc.start()
+    # tracemalloc.start()
     # m = t.query(first_name = "Rajat", last_name="Tatum")
-    t.aggregate.equal("first_name", "Rajat").equal("last_name","Tatum")
-    m = t.execute()
-    x = tracemalloc.get_traced_memory()
-    print("[Used Memory]", x)
-    print(len(m))
+    # t.aggregate.equal("first_name", "Rajat").equal("last_name","Tatum")
+    # m = t.execute()
+    # x = tracemalloc.get_traced_memory()
+    # print("[Used Memory]", x)
+    # print(len(m))
 
     # Measuring time taken with `from_database` method
     # t3 = time.perf_counter()
@@ -75,3 +77,8 @@ if __name__ == "__main__":
     # args_gen = t._read()
     # users = [User(args) for args in args_gen]
     # os.remove("database/" + "TestUserProfiles.txt")
+    # t = AggregatableTable.access_table("usernames/user/backup")
+    # p = Paginator(t._read(), 5)
+    # t.aggregate.equal("last_name", "Sandler").equal("first_name", "Matthew").greater_equal("age", 32).less_equal("age", 80)
+    # records = t.execute()
+    

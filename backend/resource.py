@@ -6,7 +6,7 @@ from flask_restful import abort, Resource, reqparse, fields, marshal_with
 from flask_login import login_required, login_user, current_user, logout_user
 from backend import ( 
     Table, FormattedTable, AggregatableTable, create_hash_password, is_users_content,
-    error_400, error_401, error_403, error_404
+    error_400, error_401, error_403, error_404, Process_QS, Paginator
     )
 from werkzeug.exceptions import HTTPException
 
@@ -148,10 +148,12 @@ class UserDatabase(Resource):
     @login_required
     @is_users_content
     def get(self, username, database):
-        file = open(f"database/usernames/{username}/{database}.txt")
-        lines = file.readlines()
-        file.close()
-        return lines
+        table = hashmap_class.get(current_user.membership.name)
+        table = table.access_table(f"usernames/{username}/{database}")
+        qs = request.query_string.decode()
+        if qs:
+            return Process_QS(qs, table).process()
+        return table.read()
 
     @login_required
     @is_users_content

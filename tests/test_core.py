@@ -1,11 +1,14 @@
 import os
+import shutil
 import unittest
 from backend import (Table, FormattedTable, AggregatableTable, 
                      TypeDoesntConfirmDefination,
-                     random_user_generator, sw
+                     random_user_generator, sw, Process_QS
                     )
-from functools import reduce
 from collections import namedtuple
+from functools import reduce
+from operator import le, gt, ne, lt, ge, le
+from werkzeug.exceptions import HTTPException
 
 
 class TestTable(unittest.TestCase):
@@ -94,6 +97,17 @@ class TestFormattedTable(unittest.TestCase):
             self.user["age"] = str(self.user["age"])
             self.t.insert(**self.user)
 
+class TestIncorrectFormattedTable(unittest.TestCase):
+    def test_creating_table(self):
+        self.t = FormattedTable("TestingTable", ("first_name:str", "last_name:str", "age:float",
+            "address:str", "telephone:str", "phone:str", "email:str", "is_married:bool"))
+        self.user = random_user_generator()
+        self.user["age"] = 12.44
+        self.user["is_married"] = False
+        del self.user["email"]
+        with self.assertRaises(HTTPException):
+            self.t.insert(**self.user)
+
 class TestAggregatableTable(unittest.TestCase):
     """
     This class tests all the aggregation operation.
@@ -123,86 +137,130 @@ class TestAggregatableTable(unittest.TestCase):
     def test_less_than(self):
         records = self.get_records()
         
-        self.t.aggregate.less_than("age", 40)
+        self.t.aggregate.add_operation("age", 40, "lt")
+        self.t.aggregate.add_operation("age", 20, "gt")
         instances = self.t.execute()
         self.assertEqual(instances, records)
         
-        self.t.aggregate.less_than("age", 25)
+        self.t.aggregate.add_operation("age", 25, "lt")
         instances_1 = self.t.execute()
         self.assertNotEqual(instances_1, records)
 
-        self.t.aggregate.less_than("age", 30)
+        self.t.aggregate.add_operation("age", 30, "lt")
         instances_2 = self.t.execute()
         self.assertNotEqual(instances_2, records)
 
     def test_greater_than(self):
         records = self.get_records()
 
-        self.t.aggregate.greater_than("age", 40)
+        self.t.aggregate.add_operation("age", 40, "gt")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
         
-        self.t.aggregate.greater_than("age", 25)
+        self.t.aggregate.add_operation("age", 25, "gt")
         instances_1 = self.t.execute()
         self.assertEqual(instances_1, records)
 
-        self.t.aggregate.greater_than("age", 30)
+        self.t.aggregate.add_operation("age", 30, "gt")
         instances_2 = self.t.execute()
         self.assertNotEqual(instances_2, records)
 
     def test_less_equal(self):
         records = self.get_records()
 
-        self.t.aggregate.less_equal("age", 40)
+        self.t.aggregate.add_operation("age", 40, "le")
         instances = self.t.execute()
         self.assertEqual(instances, records)
         
-        self.t.aggregate.less_equal("age", 25)
+        self.t.aggregate.add_operation("age", 25, "le")
         instances_1 = self.t.execute()
         self.assertNotEqual(instances_1, records)
 
-        self.t.aggregate.less_equal("age", 30)
+        self.t.aggregate.add_operation("age", 30, "le")
         instances_2 = self.t.execute()
         self.assertEqual(instances_2, records)
 
     def test_greater_equal(self):
         records = self.get_records()
 
-        self.t.aggregate.greater_equal("age", 40)
+        self.t.aggregate.add_operation("age", 40, "ge")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
         
-        self.t.aggregate.greater_equal("age", 25)
+        self.t.aggregate.add_operation("age", 25, "ge")
         instances_1 = self.t.execute()
         self.assertEqual(instances_1, records)
 
-        self.t.aggregate.greater_equal("age", 30)
+        self.t.aggregate.add_operation("age", 30, "ge")
         instances_2 = self.t.execute()
         self.assertEqual(instances_2, records)
 
     def test_equal(self):
         records = self.get_records()
 
-        self.t.aggregate.equal("age", 40)
+        self.t.aggregate.add_operation("age", 40, "eq")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
         
-        self.t.aggregate.equal("age", 25)
+        self.t.aggregate.add_operation("age", 25, "eq")
         instances_1 = self.t.execute()
         self.assertNotEqual(instances_1, records)
 
-        self.t.aggregate.equal("age", 30)
+        self.t.aggregate.add_operation("age", 30, "eq")
         instances_2 = self.t.execute()
         self.assertEqual(instances_2, records)
 
     def test_starts_with(self):
         records = self.get_records()
         
-        self.t.aggregate.starts_with("first_name", "Ad")
+        self.t.aggregate.add_operation("first_name", "Ad", "sw")
         instances = self.t.execute()
         self.assertEqual(instances, records)
 
-        self.t.aggregate.starts_with("first_name", "Pk")
+        self.t.aggregate.add_operation("first_name", "Pk", "sw")
         instances = self.t.execute()
         self.assertNotEqual(instances, records)
         
+class Test_Process_QS_Pagination(unittest.TestCase):
+    def setUp(self):
+        shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/test.txt")
+        self.t = AggregatableTable.access_table("usernames/user/test")
+
+    def tearDown(self):
+        del self.t
+        os.remove("database/usernames/user/test.txt")
+    
+    def test_process(self):
+        qs="page=2&page-size=5"
+        output = Process_QS(qs, self.t).process()
+        assert len(output["data"]) == 5
+        assert output["next_page"] == 3
+        assert output["prev_page"] == 1
+    
+    def test_proces_1(self):
+        qs = "page-2"
+        with self.assertRaises(HTTPException):
+            output = Process_QS(qs, self.t).process()
+
+    def test_proces_2(self):
+        qs = "page-size=2"
+        with self.assertRaises(HTTPException):
+            output = Process_QS(qs, self.t).process()
+
+class Test_Process_QS_URL_Search_Param(unittest.TestCase):
+    def setUp(self):
+        shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/test.txt")
+        self.t = AggregatableTable.access_table("usernames/user/test")
+
+    def tearDown(self):
+        del self.t
+        os.remove("database/usernames/user/test.txt")
+
+    def test_process(self):
+        qs = "first_name-sw=M&pk-ge=10&age-gt=18&age-le=55"
+        output = Process_QS(qs, self.t).process()
+        assert all(i.first_name.startswith("M") for i in output)
+        assert all(ge(i.pk, 10) for i in output)
+        assert all(gt(i.age, 18) for i in output)
+        assert all(le(i.age, 55) for i in output)
+

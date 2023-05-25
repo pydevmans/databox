@@ -15,16 +15,16 @@ from werkzeug.exceptions import HTTPException
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
+    shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/test.txt")
     with app.test_client() as client:
         yield client
+        os.remove("database/usernames/user/test.txt")
 
 @pytest.fixture
 def logged_user_client(client):
     res1 = client.post("/login",  data=dict(username="user", password="HelloWorld2023!"))
     assert b"Login Successful!" in res1.data
-    shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/test.txt")
     yield client
-    os.remove("database/usernames/user/test.txt")
 
 def test_homepage(client):
     res1 = client.get("/")
@@ -77,7 +77,7 @@ def test_userdatabases(logged_user_client):
 
 def test_user_database(logged_user_client):
     res1 = logged_user_client.get("/users/user/databases/test")
-    assert b"pk:int|first_name:str|last_name:str|age:int|Address:str|telephone:int|phone:int|email:str" in res1.data
+    assert b'[\n    [\n        1,\n        "Steven",\n        "Lewiz",\n        18,' in res1.data
     shutil.copy("database/usernames/user/backup.txt", "database/usernames/user/sample.txt")
     res2 = logged_user_client.put("/users/user/databases/sample", data=dict(database="helloworld"))
     assert b"Successfully renamed" in res2.data
@@ -89,7 +89,7 @@ def test_user_database(logged_user_client):
 
 def test_interacdatabase(logged_user_client):
     res1 = logged_user_client.get("/users/user/databases/test/2")
-    assert b"3402 Sandwich street, Paris, Alberta, A4I 5E6 Canada" in res1.data
+    assert b"2616 Cathedral Bluffs Drive street, Corona, Guam, U5N 7J3 Canada" in res1.data
     
     res2 = logged_user_client.delete("/users/user/databases/test/2")
     assert b"Successfully removed" in res2.data

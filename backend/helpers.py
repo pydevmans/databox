@@ -118,7 +118,12 @@ def check_password(password, hash_orig_password):
     else: return False
 
 def sw(field, pattern):
-    if field.startswith(pattern): return True
+    try:
+        if field.startswith(pattern):
+            return True
+    except AttributeError:
+        if str(field).startswith(str(pattern)):
+            return True
     else: return False
 
 def deprecated(message=""):

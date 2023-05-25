@@ -1,32 +1,32 @@
-pk:int|first_name:str|last_name:str|age:int|Address:str|telephone:int|phone:int|email:str
-1|Kamil|Smith|33|4894 Snowbert street, Palitana, Manitoba, N2A 1D6 Canada|2328541|7054037152|kamil.smith656@icloud.com
-2|Rajat|Tatum|22|3402 Sandwich street, Paris, Alberta, A4I 5E6 Canada|3730124|5122640378|rajat.tatum485@gmail.com
-3|Rajat|Modi|123|3911 Chilly street, Kutch, Nova Scotia, O4R 0N8 Canada|3530684|5122051836|rajat.modi634@live.com
-4|Kalpit|Sandler|63|3532 Sandwich street, Paris, Manitoba, C4F 0I8 Canada|2153806|6475821047|kalpit.sandler331@yahoo.com
-5|Ramesh|Bhavsar|32|2283 Nevestein street, Kalol, Manitoba, N6A 5B4 Canada|3534708|6476805371|ramesh.bhavsar628@live.com
-6|Rajat|Modi|98|1713 Alshine street, Montreal, Nova Scotia, V7L 6R3 Canada|7832054|9084375826|rajat.modi259@protonmail.com
-7|Lee|Tatum|120|3333 Sandwich street, Nandoorbar, Ontario, A4R 1M3 Canada|2213640|5142431780|lee.tatum902@live.com
-8|Rajat|Bhavsar|28|2110 Nevestein street, Montreal, Saskatchewan, V2O 3C5 Canada|7108623|9087412053|rajat.bhavsar658@yahoo.com
-9|Sarah|Panchal|111|4740 Dunlop street, Ahmedabad, New Brunswick, A4L 5D7 Canada|2361724|2263085172|sarah.panchal25@protonmail.com
-10|Kamil|Panchal|15|4218 Sandwich street, Nandoorbar, Newfoundland and Labrador, L3X 2P5 Canada|7681504|2261423586|kamil.panchal415@yahoo.com
-11|Kajol|Gates|82|4845 Rapline street, Montreal, Manitoba, I7V 5X6 Canada|3368701|6476472358|kajol.gates292@protonmail.com
-12|Rajat|Sandler|72|4745 Alshine street, Palitana, British Columbia, U5L 3V2 Canada|3502731|5144125687|rajat.sandler492@yahoo.com
-13|Kalpit|Bhavsar|123|3222 Snowbert street, Windsor, Manitoba, X4R 2M5 Canada|2746053|2265816072|kalpit.bhavsar691@gmail.com
-14|Sarah|Panchal|36|4491 Rapline street, Montreal, Saskatchewan, X3V 5E7 Canada|2706481|5123082471|sarah.panchal586@live.com
-15|Kalpit|Bezos|41|4638 Rapline street, Montreal, Newfoundland and Labrador, H6G 4D0 Canada|3028631|6477584602|kalpit.bezos330@live.com
-16|Ramesh|Tatum|59|2684 Sandwich street, Ahmedabad, Nova Scotia, W6G 3H8 Canada|7175284|5123158720|ramesh.tatum135@protonmail.com
-17|Kajol|Tatum|91|449 Dunkirk street, Windsor, New Brunswick, F3H 5W0 Canada|7752368|5126218374|kajol.tatum333@live.com
-18|Ramesh|Modi|3|3000 Rapline street, Surrey, Alberta, T7C 4S0 Canada|3750283|5143546271|ramesh.modi212@gmail.com
-19|Kalpit|Gates|31|2693 Rankin street, Kalol, Manitoba, T5M 7K1 Canada|3564087|5120572138|kalpit.gates425@yahoo.com
-20|Sarah|Tatum|94|1494 Lavender street, Paris, Ontario, A5D 4C1 Canada|7120376|7054027685|sarah.tatum278@live.com
-21|Sarah|Bezos|30|496 Snowbert street, Paris, Quebec, Byye6K2 Canada|7738052|2266238701|sarah.bezos782@yahoo.com
-22|Kajol|Bhavsar|37|107 Snowbert street, Bhuj, New Brunswick, W7Q 2V0 Canada|7621035|9086035214|kajol.bhavsar683@yahoo.com
-23|Adam|Panchal|73|1742 Snowbert street, Bhuj, Prince Edward Island, E3Y 4O1 Canada|2237516|5142786340|adam.panchal463@protonmail.com
-24|Kamil|Modi|76|428 Dunkirk street, Paris, Newfoundland and Labrador, W3F 8H5 Canada|2456380|6472074153|kamil.modi948@protonmail.com
-25|Kamil|Modi|113|2452 Nevestein street, Ahmedabad, Ontario, X5K 4F8 Canada|7754638|7050136875|kamil.modi821@icloud.com
-26|Kalpit|Panchal|66|4670 Chilly street, Nandoorbar, Quebec, U4Q 7M3 Canada|2830271|6471702865|kalpit.panchal602@icloud.com
-27|Sarah|Bezos|45|1350 Nevestein street, Kalol, British Columbia, Q1M 7T3 Canada|2342716|5145163082|sarah.bezos491@protonmail.com
-28|Ramesh|Bezos|75|2151 Alshine street, Windsor, British Columbia, B1N 7C2 Canada|2145078|9085703421|ramesh.bezos399@gmail.com
-29|Ramesh|Modi|125|4420 Lavender street, London, Ontario, P1B 3L5 Canada|3365728|9080135647|ramesh.modi307@protonmail.com
-30|Sarah|Gates|49|2146 Alshine street, Paris, Nova Scotia, O7E 1W8 Canada|2102384|9086120374|sarah.gates55@gmail.com
-31|Kamil|Bezos|14|4493 Snowbert street, Nandoorbar, British Columbia, S3E 5L0 Canada|2715042|2260132567|kamil.bezos507@protonmail.com
+pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str
+1|Steven|Lewiz|18|4366 Wayne Avenue street, Moreno Valley, Florida, X7L 3Q8 Canada|7023468|9086173548|steven.lewiz899@protonmail.com
+2|Matthew|Gates|45|2616 Cathedral Bluffs Drive street, Corona, Guam, U5N 7J3 Canada|2502174|2266072841|matthew.gates738@live.com
+3|Adam|Lewis|101|2208 Parkcrest Drive street, Glendale, Idaho, V6T 1A3 Canada|7310685|4042507163|adam.lewis617@protonmail.com
+4|Scott|Jones|12|1864 Neilson Road street, Modesto, South Dakota, G1Y 0P6 Canada|3451706|9084067328|scott.jones245@live.com
+5|Steven|Clark|42|547 Beare Road street, San Bernardino, Alabama, H2K 4R0 Canada|7304287|4042014568|steven.clark375@live.com
+6|Michael|Brown|109|4137 Reeve Crockford street, Compton, Hawaii, M4W 6E0 Canada|7452017|9088507612|michael.brown578@gmail.com
+7|Cody|Bezos|66|611 Ormerod Street street, Burbank, Maine, C6A 3S1 Canada|7420758|3103271806|cody.bezos627@yahoo.com
+8|Kaden|White|77|2843 Byng Avenue street, Fontana, New Hampshire, F1T 5I8 Canada|7361745|9085841372|kaden.white71@protonmail.com
+9|Daniel|Wilson|61|4433 Blantyre Avenue street, Modesto, Vermont, B6W 0Q2 Canada|3784135|5140458367|daniel.wilson345@gmail.com
+10|Matthew|Lopez|27|2019 Mike Myers Drive street, El Cajon, District of Columbia, P1B 5V7 Canada|2164372|6474672105|matthew.lopez427@yahoo.com
+11|Brandon|Clark|26|3203 Victoria Park Avenue street, Santa Rosa, Wisconsin, Q6W 4L0 Canada|3602184|5146523478|brandon.clark826@live.com
+12|Joseph|Smith|3|2259 William Kitchen Road street, Oxnard, Missouri, E2P 6I1 Canada|7351872|4041406375|joseph.smith820@icloud.com
+13|Joseph|Jones|119|3380 Ketchum Place street, Victorville, Delaware, T4G 0R3 Canada|2154680|2263451276|joseph.jones184@gmail.com
+14|Stephen|Tatum|59|4032 Parkcrest Drive street, San Mateo, British Columbia, F3D 0X6 Canada|3647502|3108207536|stephen.tatum205@live.com
+15|Adam|Johnson|77|4293 Kennedy Road street, El Monte, Puerto Rico, A5H 3Q1 Canada|3237458|6471528043|adam.johnson904@icloud.com
+16|Jonathan|Thomas|60|565 Painted Post Drive street, Visalia, Washington, A5P 2N0 Canada|2608237|7021632480|jonathan.thomas818@protonmail.com
+17|James|Gonzalez|10|443 Park Street street, West Covina, Mississippi, H2V 8M6 Canada|2034276|9082586174|james.gonzalez974@icloud.com
+18|Gary|Smith|61|1971 Haig Avenue street, Simi Valley, Arkansas, K2T 3Y8 Canada|3748603|2268251730|gary.smith918@protonmail.com
+19|Steven|Taylor|6|2910 Ionview Road street, Carlsbad, Kansas, P2J 4N3 Canada|2564738|9087341820|steven.taylor435@gmail.com
+20|Cody|White|34|2456 Neilson Road street, Huntington Beach, Rhode Island, Q3E 8J7 Canada|3364802|9082845016|cody.white666@protonmail.com
+21|Jonathan|Baker|52|3692 Dairy Drive street, Vallejo, Maryland, R8J 3U1 Canada|3357028|7024216053|jonathan.baker351@live.com
+22|Erin|Ramirez|50|893 Kingsbury Crescent street, Garden Grove, Alberta, R1W 4D2 Canada|7245068|3103418257|erin.ramirez306@live.com
+23|Riley|Wilson|56|4883 Cathedral Bluffs Drive street, Costa Mesa, Alaska, L1M 7W2 Canada|3136027|2266475130|riley.wilson413@gmail.com
+24|Cody|White|98|1777 Brumwell Street street, Ontario, Idaho, Y8D 3P4 Canada|2518207|5146310728|cody.white100@protonmail.com
+25|James|Sandler|55|1076 Scarborough Heights Boulevard street, Santa Clarita, South Dakota, Q0M 8E1 Canada|7302854|6477546021|james.sandler392@gmail.com
+26|Daniel|Taylor|3|4844 Bell Estate Road street, Thousand Oaks, West Virginia, K2Y 7P3 Canada|3312745|4046508243|daniel.taylor419@yahoo.com
+27|Adam|Jones|100|3860 Gooderham Drive street, Fairfield, Nova Scotia, T0L 8P2 Canada|7078625|7023256048|adam.jones639@gmail.com
+28|Christopher|Clark|20|3125 McCowan Road street, Moreno Valley, Missouri, E5V 3P1 Canada|2751832|7057048236|christopher.clark616@protonmail.com
+29|Thomas|Baker|32|3222 Markham Road street, Corona, Alberta, E8Y 0U2 Canada|7128647|2266325708|thomas.baker114@protonmail.com
+30|Michael|Bezos|36|391 Civic Road street, Oxnard, New York, J5H 3O2 Canada|2253468|5144673250|michael.bezos374@protonmail.com
+31|Daniel|Ramirez|43|1802 Macklingate Court street, Sunnyvale, American Samoa, W6N 8I2 Canada|7836750|2265812073|daniel.ramirez38@protonmail.com

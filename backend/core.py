@@ -21,11 +21,12 @@ class Table:
     def __init__(self, tablename, columns, joiner="|"):
         """
         Title/Header/Column-Name for Table is passed as tuple.
-        This table represent for any shape or size file database representation of the SQL type data.
-                Fields:
-                tablename: string -> "Users"
-                columns: tuple(field_name:field_type) -> ("Name:str","Address:str", ...)
-                joiner: string -> "|" or "," etc...
+        This table represent for any shape or size file database representation 
+        of the SQL type data.
+            Fields:
+            tablename: string -> "Users"
+            columns: tuple(field_name:field_type) -> ("Name:str","Address:str", ...)
+            joiner: string -> "|" or "," etc...
         """
         self.tablename = tablename if not "/" in tablename else tablename.split("/")[-1]
         self.columns = columns
@@ -91,34 +92,39 @@ class Table:
         obj.last_pk = len(lines)
         return obj
 
-
 class Paginator:
-    def __init__(self, resource, items_on_page=5):
+    def __init__(self, resource, page, items_on_page=5):
         """
         Page for Paginator starts from `1` to the last page where last record can be found.
         """
         self.resource = resource
-        self.current_page = 1
+        self.current_page = page
         self.items_on_page = items_on_page
         self.total_page = ceil(len(self.resource) / self.items_on_page)
 
-    def has_prev_page(self):
-        if (self.current_page - 1) > 0: return True
-        else: return False
+    def _has_prev_page(self):
+        if (self.current_page - 1) > 0 : return self.current_page-1
+        else: return None
 
-    def has_next_page(self):
-        if (self.current_page + 1) < self.total_page: return True
-        else: return False
+    def _has_next_page(self):
+        if (self.current_page + 1) <= self.total_page: return self.current_page + 1
+        else: return None
 
-    def serve(self, page):
-        if page > self.total_page:
-            raise HTTPException(f"Please make sure `page` is within `1 <= page <= {self.total_page})`.")
-        start = (page - 1) * self.items_on_page
-        end = (page * self.items_on_page) - 1
-        output = []
-        for item in itertools.islice(self.resource, start, end, step=1):
-            output.append(item)
-        return output
+    def serve(self):
+        if self.current_page > self.total_page:
+            raise HTTPException(
+                f"Please make sure `page` is within `(1, {self.total_page})`."
+            )
+        start = (self.current_page - 1) * self.items_on_page
+        end = (self.current_page * self.items_on_page)
+        resp = {}
+        resp["data"] = []
+        for item in itertools.islice(self.resource, start, end):
+            resp["data"].append(item)
+        resp["next_page"] = self._has_next_page()
+        resp["prev_page"] = self._has_prev_page()
+        resp["total_page"] = self.total_page
+        return resp
 
 
 class FormattedTable(Table):
@@ -163,23 +169,20 @@ class FormattedTable(Table):
         Performs type checking of the record data with type parsed from the field defination.
         Prevents mismatched datatype entry in Table.
         Raises `TypeDoesntConfirmDefination` when datatypes don't match.
+        Method ignores all the extra `kwargs` as long as `all` needed kwargs are passed.
         """
-        table_field_name = tuple(self.field_format.keys())[1:]
-        table_field_types = tuple(self.field_format.values())[1:]
-        record_field_values = [kwargs[key_name] for key_name in table_field_name]
-        _ = list(map(lambda a: type(a[0]) == a[1], zip(record_field_values, table_field_types)))
-        if False in _ and _.count(False) == 1:
-            index = _.index(False)
-            raise TypeDoesntConfirmDefination(f"The type for value does not match with {self.columns[index]} specification.")
-        elif _.count(False) >= 2:
-            indexes = [index for index, val in enumerate(_) if val == False]
-            raise TypeDoesntConfirmDefination(f"""The type for value does not match with 
-                                              `{[self.columns[i] for i in indexes]}` specification.
-                                              Please Check the data type are as per specification
-                                              of the Table type defination."""
-                )
-        else:
-            return
+        _ = []
+        for fields in tuple(self.field_format.keys())[1:]:
+            try:
+                if type(kwargs[fields]) == self.field_format[fields]: pass
+                else: _.append(fields)
+            except KeyError:
+                raise HTTPException(f"""`{fields.capitalize()}` is not a valid
+                    field of database. Please check and Try again.""")
+        if _:
+            raise TypeDoesntConfirmDefination(
+                f"The type for value does not match with {_} specification."
+            )
 
     @staticmethod
     def _features():
@@ -193,11 +196,10 @@ class FormattedTable(Table):
         This method access data in "r" mode and returns type compliant records.
         """
         lines = (line.rstrip() for line in open(self.filelocation, "r") if line.strip() != "")
-        cols = (cols.split("|") for cols in lines)
+        cols = (col.split("|") for col in lines)
         title_record = next(lines)
-        types = self.field_format.values()
-        types_value = (tuple(zip(types, value)) for value in cols)
-        casted_args = ([i[0](i[1]) for i in item] for item in types_value)
+        types = tuple(self.field_format.values())
+        casted_args = ([types[index](item) for index, item in enumerate(value)] for value in cols)        
         obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
         return (obj(*i) for i in casted_args)
 
@@ -208,10 +210,10 @@ class FormattedTable(Table):
         """
         This method is here to provide one parameter lookup only.
         Should need to aggregate by more than one parameter, use `Table().aggregate`
-        methods instead.
+        method instead.
         """
         if len(kwargs.keys()) >= 2:
-            raise HTTPException("Please use `Table().aggregate` methods for refined filter.")
+            raise HTTPException("Please use `Table().aggregate` methods for refined aggregation.")
         def myfunc(obj, **kwargs):
             for key in kwargs.keys():
                 if getattr(obj, key, None) != kwargs[key]:
@@ -220,10 +222,9 @@ class FormattedTable(Table):
         return list(filter(lambda obj: myfunc(obj, **kwargs), self._read()))
 
     def delete(self, pk):
-        if pk == 0: raise HTTPException("Can not delete title record")
+        if pk == 0: raise HTTPException(f"Can not delete pk:`{pk}`, since it is title record.")
         with open(self.filelocation, "r+") as file:
-            for i in range(pk):
-                file.readline()
+            itertools.islice(file.readline(), pk)
             start = file.tell()
             file.readline()
             end = file.tell()
@@ -259,49 +260,16 @@ class AggregateOperations:
     def __init__(self):
         self.ops = dict()
 
-    def less_than(self, field, value=0):
+    def add_operation(self, field, value = 0, op = "eq"):
+        """
+        All Aggregation operation defined here are performed on `int` and 
+        `str` data type. For specific Operations, raise specific errors 
+        to inform users of how use specific operation.         
+        """
         if self.ops.get(field):
-            self.ops[field].append({ "value":value, "op":"lt"})
+            self.ops[field].append({ "value":value, "op": op})
         else:
-            self.ops.update({field: [{ "value":value, "op":"lt"}]})
-        return self
-
-    def greater_than(self, field, value=0):
-        if self.ops.get(field):
-            self.ops[field].append({ "value":value, "op":"gt"})
-        else:
-            self.ops.update({field: [{ "value":value, "op":"gt"}]})
-        return self
-
-    def less_equal(self, field, value=0):
-        if self.ops.get(field):
-            self.ops[field].append({ "value":value, "op":"le"})
-        else:
-            self.ops.update({field: [{ "value":value, "op":"le"}]})
-        return self
-
-    def greater_equal(self, field, value=0):
-        if self.ops.get(field):
-            self.ops[field].append({ "value":value, "op":"ge"})
-        else:
-            self.ops.update({field: [{ "value":value, "op":"ge"}]})
-        return self
-
-    def equal(self, field, value=0):
-        if self.ops.get(field):
-            self.ops[field].append({ "value":value, "op":"eq"})
-        else:
-            self.ops.update({field: [ {"value":value, "op":"eq"}]})
-        return self
-
-    def starts_with(self, field, value=""):
-        """This methods is only for string field."""
-        if type(value) != str:
-            raise NotAValidFieldType
-        if self.ops.get(field):
-            self.ops[field].append({ "value":value, "op":"sw"})
-        else:
-            self.ops.update({field: [ {"value":value, "op":"sw"}]})
+            self.ops.update({field: [{ "value":value, "op": op}]})
         return self
 
     def clear(self):
@@ -328,10 +296,12 @@ class AggregatableTable(FormattedTable):
         }
         do_process_record = False
         # this for loop gets all `field`, `op` has provided to process
-        for field_aggr_key, field_aggr_value in self.aggregate.ops.items():
+        for field_key, field_aggr_value in self.aggregate.ops.items():
             # this for loop performs all `Operation`s needed to be perform on field of records
             for op in field_aggr_value:
-                if hashmap_operation[op["op"]](record._asdict()[field_aggr_key], op["value"]) == True:
+                if hashmap_operation[op["op"]](
+                    getattr(record, field_key), op["value"]
+                ) == True:
                     do_process_record = True
                     continue
                 else:
@@ -359,3 +329,78 @@ class AggregatableTable(FormattedTable):
         output = list(filter(lambda x: self._filter_record(x), self._read()))
         self.aggregate.clear()
         return output
+
+
+class Process_QS:
+    """
+    This class takes `query string` from the URL in `str` format and processes
+    it to serve `Pagination` or to process `URL Search Parameter`
+    """
+    def __init__(self, qs, table):
+        self.qs = qs
+        self.table = table
+
+    def _is_pagination_url_parameter(self):
+        if "page" in self.qs:
+            return self.process_pagination()
+        else:
+            return self.process_url_parameter()
+
+    def process_url_parameter(self):
+        operations = ("gt","ge","le","lt","eq","ne","sw")
+        for op in self.qs.split("&"):
+            field_operation, _, val = op.partition("=")
+            if _ != "=":
+                raise HTTPException("""please make sure to pass search parameter
+                    as `field_name-operator=value`""")
+            fi_op = field_operation.partition("-")
+            field = fi_op[0]
+            operation = fi_op[-1] if fi_op[-1] else "eq"
+            if operation not in operations:
+                raise HTTPException(f"""Operation: `{operation}` is not valid.
+                    Please choose from `{operations}`"""
+                )
+            try:
+                val = self.table.field_format[field](val)
+            except KeyError:
+                raise HTTPException(f"Key: `{field}` is not valid field! Please Check again.")
+            except AttributeError:
+                raise HTTPException(f"""Current Plan:
+                    `{current_user.membership.name.capitalize()}` does not have 
+                    sufficient features. Please upgrade the plan."""
+                )
+            try:
+                self.table.aggregate.add_operation(field, val, operation)
+            except AttributeError:
+                raise HTTPException(f"""Current Plan:
+                    `{current_user.membership.name.capitalize()}` does not have 
+                    sufficient features. Please upgrade the plan."""
+                )
+        return self.table.execute()
+    
+    def process_pagination(self):
+        query_param_kv = dict()
+        for i in self.qs.split("&"):
+            # str.partition("=") >>> ("page-size", "=", "23")
+            _ = i.partition("=")
+            try:
+                query_param_kv.update({_[0]: int(_[2])})
+            except ValueError:
+                raise HTTPException(f"""Value for `{_[0]}` must be of `int` type,
+                    not `{type(_[2])}`.""")
+        page = query_param_kv.get("page", None)
+        page_size = query_param_kv.get("page-size", 10)
+        if page == None:
+            raise HTTPException("""For Pagination `page` is must needed parameter.
+                For size of page, define `page-size`.""")
+        try:
+            return Paginator(self.table.read(), page, page_size).serve()
+        except AttributeError:
+            raise HTTPException(f"""Current Plan:
+                `{current_user.membership.name.capitalize()}` does not have 
+                sufficient features. Please upgrade the plan."""
+            )
+
+    def process(self):
+        return self._is_pagination_url_parameter()
+

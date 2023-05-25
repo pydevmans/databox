@@ -21,6 +21,9 @@
   - `post`: To log the user out
 - /features
   - `get`: Lists features of 3 Membership types.
+
+### User specific:
+
 - /users/`<username:str>`/profile
   - `get`: list user's info
 - /users/`<username:str>`/databases
@@ -28,6 +31,7 @@
   - `delete`: delete all the <B>databases</B>
 - /users/`<username:str>`/databases/`<database:str>`
   - `get`: list records (view only)
+    - Apply Pagination and all sorts of URL Query Parameter Operations
   - `put`: rename the `database`
   - `delete`: delete the `database`
 - /users/`<username:str>`/databases/`<database:str>`/pk_record
