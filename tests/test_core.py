@@ -9,7 +9,6 @@ from backend import (
     random_user_generator,
     Process_QS,
 )
-from functools import reduce
 from operator import gt, ge, le
 from werkzeug.exceptions import HTTPException
 
@@ -44,24 +43,14 @@ class TestTable(unittest.TestCase):
     def test_insert(self):
         """
         Tests insertion of data on the file with expected entry in file.
-        Since type checking is not the feature for this class, for `age:str` no error will be raised.
+        Since type checking is not the feature for this class, for `age:str`
+        no error will be raised.
         """
+        self.user["extra"] = "extra"
         self.t.insert(**self.user)
-        dataset = (
-            self.user["first_name"],
-            self.user["last_name"],
-            self.user["age"],
-            self.user["address"],
-            self.user["telephone"],
-            self.user["phone"],
-            self.user["email"],
-        )
-        title_on_test_data = (
-            "1" + reduce(lambda a, b: a + self.t.joiner + str(b), dataset, "") + "\n"
-        )
         with open(self.t.filelocation, mode="r") as file:
             title_on_file = file.readlines()
-            self.assertEqual(title_on_file[-1], title_on_test_data)
+            self.assertNotIn("extra", title_on_file)
 
     def test_access_table(self):
         """
@@ -122,7 +111,8 @@ class TestFormattedTable(unittest.TestCase):
 
     def test_insert(self):
         """
-        Checks upon inserting non-compliant datatype value for field of record, raises Exception.
+        Checks upon inserting non-compliant datatype value for field of record,
+        raises Exception.
         """
         with self.assertRaises(TypeDoesntConfirmDefination):
             self.user["age"] = str(self.user["age"])

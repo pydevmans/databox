@@ -195,8 +195,8 @@ class FormattedTable(Table):
                     _.append(fields)
             except KeyError:
                 raise HTTPException(
-                    f"""`{fields.capitalize()}` is not a valid
-                    field of database. Please check and Try again."""
+                    f"""Value for Field: `{fields}` is not valid.
+                    Please check and Try again."""
                 )
         if _:
             raise TypeDoesntConfirmDefination(
