@@ -146,7 +146,7 @@ class TestFormattedTable(unittest.TestCase):
         Checks upon inserting non-compliant datatype value for field of record,
         raises Exception.
         """
-        with self.assertRaises(TypeDoesntConfirmDefination):
+        with self.assertRaises(HTTPException):
             self.user["age"] = str(self.user["age"])
             self.t.insert(**self.user)
 
