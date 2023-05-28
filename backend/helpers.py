@@ -1,8 +1,10 @@
 import random
-from .gen_response import error_403
 import hashlib
+from .gen_response import error_403
+from abc import ABC, abstractmethod
 from functools import reduce
 from flask_login import current_user
+from werkzeug.exceptions import HTTPException
 
 CAPITAL_LETTERS = (65, 90)
 SMALL_CAP_LETTERS = (96, 122)
@@ -402,3 +404,21 @@ def is_users_content(func):
         return error_403
 
     return wrapper
+
+
+class CustomDataType(ABC):
+    @abstractmethod
+    def process():
+        pass
+
+
+class unique_string(CustomDataType):
+    def process1():
+        pass
+
+
+def generic_open(filename, mode):
+    try:
+        return open(filename, mode=mode)
+    except FileNotFoundError:
+        raise HTTPException("Please check the URL!")

@@ -1,22 +1,19 @@
 import os
 import shutil
 from enum import Enum
-from flask import request
-from flask_restful import abort, Resource, reqparse, fields, marshal_with
-from flask_login import login_required, login_user, current_user, logout_user
 from backend import (
-    Table,
-    FormattedTable,
-    AggregatableTable,
-    create_hash_password,
+    upgrade_exception,
     is_users_content,
+    create_hash_password,
     error_400,
-    error_401,
-    error_403,
-    error_404,
+    AggregatableTable,
+    FormattedTable,
     Process_QS,
-    Paginator,
+    Table,
 )
+from flask import request
+from flask_login import login_required, login_user, current_user, logout_user
+from flask_restful import Resource, fields
 from werkzeug.exceptions import HTTPException
 
 
@@ -26,11 +23,18 @@ class Membership(Enum):
     premium = 2
 
 
-hashmap_class = {
-    "free": Table,
-    "basic": FormattedTable,
-    "premium": AggregatableTable,
-}
+class ClientServiceType:
+    def __init__(self, current_user):
+        self.membership_name = current_user.membership.name
+
+    def get_table_klass(self):
+        if self.membership_name == "free":
+            return Table
+        elif self.membership_name == "basic":
+            return FormattedTable
+        elif self.membership_name == "premium":
+            return AggregatableTable
+
 
 users_profile_fields = {
     "first_name": fields.String,
@@ -96,15 +100,20 @@ class UserProfile(Resource):
 
 class SignUp(Resource):
     def post(self):
-        password = create_hash_password(request.form["password"])
         kwargs = request.form.to_dict()
-        kwargs["password"] = password
-        kwargs["membership"] = int(kwargs["membership"])
+        try:
+            kwargs["password"] = create_hash_password(kwargs["password"])
+            kwargs["membership"] = int(kwargs["membership"])
+        except KeyError:
+            raise HTTPException("Invalid request.")
         users_table = AggregatableTable.access_table("users")
         try:
             users_table.insert(**kwargs)
         except:
             return error_400
+        os.mkdir(
+            f"database/usernames/{kwargs['username']}",
+        )
         return {"message": "request to add user was successsful."}
 
 
@@ -163,12 +172,15 @@ class UserDatabase(Resource):
     @login_required
     @is_users_content
     def get(self, username, database):
-        table = hashmap_class.get(current_user.membership.name)
+        table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         qs = request.query_string.decode()
         if qs:
             return Process_QS(qs, table).process()
-        return table.read()
+        try:
+            return table.read()
+        except AttributeError:
+            raise upgrade_exception(current_user)
 
     @login_required
     @is_users_content
@@ -178,9 +190,7 @@ class UserDatabase(Resource):
             f"database/usernames/{username}/{database}.txt",
             f"database/usernames/{username}/{name}.txt",
         )
-        return {
-            "message": f"Successfully renamed to `database/usernames/{username}/{database}.txt`"
-        }
+        return {"message": f"Successfully renamed to `{name}`."}
 
     @login_required
     @is_users_content
@@ -193,27 +203,21 @@ class InteracDatabase(Resource):
     @login_required
     @is_users_content
     def get(self, username, database, pk):
-        table = hashmap_class.get(current_user.membership.name, None)
+        table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
             record = table.query(pk=pk)
         except AttributeError:
-            return {
-                "message": f"""Current Plan: `{current_user.membership.name.capitalize()}`
-                does not have sufficient features. Please upgrade the plan."""
-            }
+            raise upgrade_exception(current_user)
         return record
 
     @login_required
     @is_users_content
     def delete(self, username, database, pk):
-        table = hashmap_class.get(current_user.membership.name, None)
+        table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
             table.delete(pk=pk)
         except AttributeError:
-            return {
-                "message": f"""Current Plan: {table.__class__} 
-                does not have sufficient features. Upgrade the plan."""
-            }
+            raise upgrade_exception(current_user)
         return {"message": f"Successfully removed {database} Database"}

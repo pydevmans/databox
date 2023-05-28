@@ -1,14 +1,18 @@
 import os
+import pytest
 import shutil
 import unittest
 from backend import (
-    Table,
-    FormattedTable,
-    AggregatableTable,
-    TypeDoesntConfirmDefination,
     random_user_generator,
+    generic_open,
+    AggregatableTable,
+    Paginator,
     Process_QS,
+    FormattedTable,
+    Table,
+    TypeDoesntConfirmDefination,
 )
+from math import ceil
 from operator import gt, ge, le
 from werkzeug.exceptions import HTTPException
 
@@ -36,7 +40,7 @@ class TestTable(unittest.TestCase):
 
     def test_title(self):
         title_on_test_data = "pk:int|first_name:str|last_name:str|age:str|address:str|telephone:int|phone:int|email:str\n"
-        with open(self.t.filelocation, mode="r") as file:
+        with generic_open(self.t.filelocation, mode="r") as file:
             title_on_file = file.readline()
             self.assertEqual(title_on_file, title_on_test_data)
 
@@ -48,7 +52,7 @@ class TestTable(unittest.TestCase):
         """
         self.user["extra"] = "extra"
         self.t.insert(**self.user)
-        with open(self.t.filelocation, mode="r") as file:
+        with generic_open(self.t.filelocation, mode="r") as file:
             title_on_file = file.readlines()
             self.assertNotIn("extra", title_on_file)
 
@@ -65,8 +69,36 @@ class TestTable(unittest.TestCase):
         Tests access_table method tests,
             if non-existing file raises `FileNotFoundError` error,
         """
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(HTTPException):
             self.t.access_table(self.t.tablename + "mismatchpart")
+
+
+class TestPaginator(unittest.TestCase):
+    def setUp(self):
+        shutil.copy(
+            f"database/usernames/user0/backup.txt",
+            f"database/usernames/user0/test.txt",
+        )
+
+    def tearDown(self):
+        os.remove(f"database/usernames/user0/test.txt")
+
+    def test_serve(self):
+        page = 2
+        page_size = 10
+        self.t = FormattedTable.access_table("usernames/user0/test")
+        resp = Paginator(self.t.read(), page, page_size).serve()
+        assert resp["total_page"] == ceil(len(self.t.read()) / page_size)
+        assert len(resp["data"]) == page_size
+
+    def test_serve_1(self):
+        self.t = FormattedTable.access_table("usernames/user0/test")
+        with pytest.raises(HTTPException):
+            Paginator(self.t.read(), 10, 10).serve()
+        with pytest.raises(HTTPException):
+            Paginator(self.t.read(), 0, 10).serve()
+        with pytest.raises(HTTPException):
+            Paginator(self.t.read(), -112, 10).serve()
 
 
 class TestFormattedTable(unittest.TestCase):
@@ -273,13 +305,13 @@ class TestAggregatableTable(unittest.TestCase):
 class Test_Process_QS_Pagination(unittest.TestCase):
     def setUp(self):
         shutil.copy(
-            "database/usernames/user/backup.txt", "database/usernames/user/test.txt"
+            "database/usernames/user0/backup.txt", "database/usernames/user0/test.txt"
         )
-        self.t = AggregatableTable.access_table("usernames/user/test")
+        self.t = AggregatableTable.access_table("usernames/user0/test")
 
     def tearDown(self):
         del self.t
-        os.remove("database/usernames/user/test.txt")
+        os.remove("database/usernames/user0/test.txt")
 
     def test_process(self):
         qs = "page=2&page-size=5"
@@ -289,31 +321,45 @@ class Test_Process_QS_Pagination(unittest.TestCase):
         assert output["prev_page"] == 1
 
     def test_proces_1(self):
-        qs = "page-2"
-        with self.assertRaises(HTTPException):
-            Process_QS(qs, self.t).process()
+        assert (
+            "`-`, `=`, `&` characters."
+            in Process_QS("page-2", self.t).process()["message"]
+        )
 
-    def test_proces_2(self):
-        qs = "page-size=2"
+        assert (
+            "`-`, `=`, `&` characters."
+            in Process_QS("page>2&page-size>=23", self.t).process()["message"]
+        )
+
         with self.assertRaises(HTTPException):
-            Process_QS(qs, self.t).process()
+            Process_QS("page-size=2", self.t).process()
 
 
 class Test_Process_QS_URL_Search_Param(unittest.TestCase):
     def setUp(self):
         shutil.copy(
-            "database/usernames/user/backup.txt", "database/usernames/user/test.txt"
+            "database/usernames/user0/backup.txt", "database/usernames/user0/test.txt"
         )
-        self.t = AggregatableTable.access_table("usernames/user/test")
+        self.t = AggregatableTable.access_table("usernames/user0/test")
 
     def tearDown(self):
         del self.t
-        os.remove("database/usernames/user/test.txt")
+        os.remove("database/usernames/user0/test.txt")
 
     def test_process(self):
-        qs = "first_name-sw=M&pk-ge=10&age-gt=18&age-le=55"
+        qs = "first_name-sw=m&pk-ge=10&age-gt=18&age-le=55"
         output = Process_QS(qs, self.t).process()
-        assert all(i.first_name.startswith("M") for i in output)
-        assert all(ge(i.pk, 10) for i in output)
-        assert all(gt(i.age, 18) for i in output)
-        assert all(le(i.age, 55) for i in output)
+        assert all([i.first_name.startswith("M") for i in output])
+        assert all([ge(i.pk, 10) for i in output])
+        assert all([gt(i.age, 10) for i in output])
+        assert all([le(i.age, 55) for i in output])
+
+    def test_process_1(self):
+        garbage_qs = "name-joe&age>23"
+        assert (
+            "`-`, `=`, `&` characters"
+            in Process_QS(garbage_qs, self.t).process()["message"]
+        )
+
+        qs = "name=joe&age==23"
+        assert "are not valid." in Process_QS(qs, self.t).process()["message"]

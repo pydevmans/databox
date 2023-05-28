@@ -46,7 +46,7 @@
 
 - to login user
 
-  `curl http://127.0.0.1:5000/login -X POST -d "username=user" -d "password=HelloWorld2023!" -v`
+  `curl http://127.0.0.1:5000/login -X POST -d "username=user0" -d "password=HelloWorld2023!" -v`
 
 - to access protected endpoint
   `curl --cookie "session=<session_key>" http://127.0.0.1:5000/test`

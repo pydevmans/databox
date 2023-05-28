@@ -1,7 +1,9 @@
 import os
+import re
 import itertools
 from math import ceil
-from .helpers import sw
+from .helpers import sw, generic_open
+from .gen_response import upgrade_exception, invalid_query_string, invalid_field_name
 from collections import namedtuple
 from flask_login import current_user
 from functools import reduce
@@ -60,7 +62,7 @@ class Table:
         if os.path.isfile(self.filelocation):
             pass
         else:
-            with open(self.filelocation, mode="w") as file:
+            with generic_open(self.filelocation, mode="w") as file:
                 data = (
                     reduce(lambda x, y: x + self.joiner + str(y), args, "pk:int") + "\n"
                 )
@@ -78,7 +80,7 @@ class Table:
         Inserts record to the database when intialising it
         Converts all the field to `str(field)` before inserting into database.
         """
-        with open(self.filelocation, mode="a") as file:
+        with generic_open(self.filelocation, mode="a") as file:
             fields = list(map(lambda x: x.split(":")[0], self.columns))
             data = str(self.last_pk)
             data = (
@@ -94,7 +96,7 @@ class Table:
     @classmethod
     def access_table(cls, tablename, columns=tuple(), joiner="|"):
         filename = "database/" + tablename + ".txt"
-        file = open(filename, mode="r")
+        file = generic_open(filename, mode="r")
         lines = file.readlines()
         cols = tuple(lines[0].split(joiner)[1:])
         obj = cls(tablename, cols, joiner)
@@ -126,13 +128,13 @@ class Paginator:
             return None
 
     def serve(self):
-        if self.current_page > self.total_page:
+        if self.current_page <= 0 or self.current_page > self.total_page:
             raise HTTPException(
                 f"Please make sure `page` is within `(1, {self.total_page})`."
             )
         start = (self.current_page - 1) * self.items_on_page
         end = self.current_page * self.items_on_page
-        resp = {}
+        resp = dict()
         resp["data"] = []
         for item in itertools.islice(self.resource, start, end):
             resp["data"].append(item)
@@ -194,14 +196,9 @@ class FormattedTable(Table):
                 else:
                     _.append(fields)
             except KeyError:
-                raise HTTPException(
-                    f"""Value for Field: `{fields}` is not valid.
-                    Please check and Try again."""
-                )
+                raise HTTPException(f"""Invalid request. Check fields: `{fields}`.""")
         if _:
-            raise TypeDoesntConfirmDefination(
-                f"The type for value does not match with {_} specification."
-            )
+            raise HTTPException(f"Invalid request. Field `{_}` has invalid value type.")
 
     @staticmethod
     def _features():
@@ -215,10 +212,12 @@ class FormattedTable(Table):
         This method access data in "r" mode and returns type compliant records.
         """
         lines = (
-            line.rstrip() for line in open(self.filelocation, "r") if line.strip() != ""
+            line.rstrip()
+            for line in generic_open(self.filelocation, "r")
+            if line.strip() != ""
         )
         cols = (col.split("|") for col in lines)
-        title_record = next(lines)
+        next(lines)  # title_record
         types = tuple(self.field_format.values())
         casted_args = (
             [types[index](item) for index, item in enumerate(value)] for value in cols
@@ -232,12 +231,14 @@ class FormattedTable(Table):
     def query(self, **kwargs):
         """
         This method is here to provide one parameter lookup only.
-        Should need to aggregate by more than one parameter, use `Table().aggregate`
-        method instead.
+        Should need to aggregate by more than one parameter,
+        use `Table().aggregate` method instead.
         """
         if len(kwargs.keys()) >= 2:
             raise HTTPException(
-                "Please use `Table().aggregate` methods for refined aggregation."
+                """Please use `Table().aggregate` methods for \
+                refined aggregation.
+                """
             )
 
         def myfunc(obj, **kwargs):
@@ -251,7 +252,7 @@ class FormattedTable(Table):
     def delete(self, pk):
         if pk == 0:
             raise HTTPException(f"Can not delete pk:`{pk}`, since it is title record.")
-        with open(self.filelocation, "r+") as file:
+        with generic_open(self.filelocation, "r+") as file:
             itertools.islice(file.readline(), pk)
             start = file.tell()
             file.readline()
@@ -261,6 +262,10 @@ class FormattedTable(Table):
             file.write(" " * size)
 
     def insert(self, **kwargs):
+        """
+        Unlike parent's insert method, this method does _type_checking
+        before inserting record into
+        """
         self._type_checking(**kwargs)
         Table.insert(self, **kwargs)
 
@@ -272,9 +277,11 @@ class FormattedTable(Table):
         types_tuple = tuple(self.field_format.values())
         output = []
         records = (
-            record for record in open(self.filelocation, "r") if record.strip() != ""
+            record
+            for record in generic_open(self.filelocation, "r")
+            if record.strip() != ""
         )
-        title_line = next(records)
+        next(records)  # title_line
         for record in records:
             args = []
             for index, val in enumerate(record.rstrip().split(self.joiner)):
@@ -331,14 +338,14 @@ class AggregatableTable(FormattedTable):
             for op in field_aggr_value:
                 if (
                     hashmap_operation[op["op"]](getattr(record, field_key), op["value"])
-                    == True
+                    is True
                 ):
                     do_process_record = True
                     continue
                 else:
                     do_process_record = False
                     break
-            if do_process_record == False:
+            if do_process_record is False:
                 break
         if do_process_record:
             return True
@@ -371,7 +378,9 @@ class Process_QS:
         self.qs = qs
         self.table = table
 
-    def _is_pagination_url_parameter(self):
+    def process_pagination_or_url_parameter(self):
+        if not re.fullmatch("([\w]*-?[\w]*=[\w]*&?)+", self.qs):
+            return invalid_query_string
         if "page" in self.qs:
             return self.process_pagination()
         else:
@@ -384,36 +393,23 @@ class Process_QS:
             if _ != "=":
                 raise HTTPException(
                     """please make sure to pass search parameter
-                    as `field_name-operator=value`"""
+                    as `field_name-operation=value`"""
                 )
             fi_op = field_operation.partition("-")
             field = fi_op[0]
-            operation = fi_op[-1] if fi_op[-1] else "eq"
-            if operation not in operations:
+            op = fi_op[-1] if fi_op[-1] else "eq"
+            if op not in operations:
                 raise HTTPException(
-                    f"""Operation: `{operation}` is not valid.
+                    f"""Operation: `{op}` is not valid.
                     Please choose from `{operations}`"""
                 )
             try:
                 val = self.table.field_format[field](val)
+                self.table.aggregate.add_operation(field, val, op)
             except KeyError:
-                raise HTTPException(
-                    f"Key: `{field}` is not valid field! Please Check again."
-                )
+                return invalid_field_name(field)
             except AttributeError:
-                raise HTTPException(
-                    f"""Current Plan:
-                    `{current_user.membership.name.capitalize()}` does not have 
-                    sufficient features. Please upgrade the plan."""
-                )
-            try:
-                self.table.aggregate.add_operation(field, val, operation)
-            except AttributeError:
-                raise HTTPException(
-                    f"""Current Plan:
-                    `{current_user.membership.name.capitalize()}` does not have 
-                    sufficient features. Please upgrade the plan."""
-                )
+                raise upgrade_exception(current_user)
         return self.table.execute()
 
     def process_pagination(self):
@@ -430,7 +426,7 @@ class Process_QS:
                 )
         page = query_param_kv.get("page", None)
         page_size = query_param_kv.get("page-size", 10)
-        if page == None:
+        if page is None:
             raise HTTPException(
                 """For Pagination `page` is must needed parameter.
                 For size of page, define `page-size`."""
@@ -438,11 +434,7 @@ class Process_QS:
         try:
             return Paginator(self.table.read(), page, page_size).serve()
         except AttributeError:
-            raise HTTPException(
-                f"""Current Plan:
-                `{current_user.membership.name.capitalize()}` does not have 
-                sufficient features. Please upgrade the plan."""
-            )
+            raise upgrade_exception(current_user)
 
     def process(self):
-        return self._is_pagination_url_parameter()
+        return self.process_pagination_or_url_parameter()
