@@ -218,10 +218,7 @@ def test_interacdatabase(logged_user_client):
 
 def test_userdatabases_loggedout(client):
     get_res = client.get("/users/user/databases")
-    assert (
-        b"You either supplied the wrong credentials (e.g. a bad password)"
-        in get_res.data
-    )
+    assert b"Access unauthorized!" in get_res.data
     put_res = client.put("/users/user/databases", data=dict(database="newname"))
     assert b"method is not allowed" in put_res.data
     post_res = client.post("/users/user/databases")
@@ -230,33 +227,18 @@ def test_userdatabases_loggedout(client):
 
 def test_user_database_loggedout(client):
     get_res = client.get("/users/user/databases/test")
-    assert (
-        b"You either supplied the wrong credentials (e.g. a bad password)"
-        in get_res.data
-    )
+    assert b"Access unauthorized!" in get_res.data
     put_res = client.put(
         "/users/user/databases/test1", data=dict(database="helloworld")
     )
-    assert (
-        b"You either supplied the wrong credentials (e.g. a bad password)"
-        in put_res.data
-    )
+    assert b"Access unauthorized!" in put_res.data
     del_res = client.delete("/users/user/databases/test1")
-    assert (
-        b"You either supplied the wrong credentials (e.g. a bad password)"
-        in del_res.data
-    )
+    assert b"Access unauthorized!" in del_res.data
 
 
 def test_interacdatabase_loggedout(client):
     get_res = client.get("/users/user/databases/test/2")
-    assert (
-        b"You either supplied the wrong credentials (e.g. a bad password)"
-        in get_res.data
-    )
+    assert b"Access unauthorized!" in get_res.data
 
     del_res = client.delete("/users/user/databases/test/2")
-    assert (
-        b"You either supplied the wrong credentials (e.g. a bad password)"
-        in del_res.data
-    )
+    assert b"Access unauthorized!" in del_res.data
