@@ -113,8 +113,11 @@ def test_userdatabases(logged_user_client):
         f"/users/{current_user.username}/databases", data=dict(database="newname")
     )
     assert b"method is not allowed" in put_res.data
-    post_res = logged_user_client.post(f"/users/{current_user.username}/databases")
-    assert b"method is not allowed" in post_res.data
+    post_res = logged_user_client.post(
+        f"/users/{current_user.username}/databases",
+        data={"title": "testing", "fields": "name:str,age:int"},
+    )
+    assert b"Successfully created " in post_res.data
 
 
 def test_user_database(logged_user_client):
@@ -122,7 +125,10 @@ def test_user_database(logged_user_client):
         get_res = logged_user_client.get(
             f"/users/{current_user.username}/databases/test"
         )
-        assert b'"Steven"' in get_res.data
+        assert (
+            b'"pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str"'
+            in get_res.data
+        )
         shutil.copy(
             f"database/usernames/{current_user.username}/backup.txt",
             f"database/usernames/{current_user.username}/sample.txt",
@@ -154,7 +160,10 @@ def test_user_database(logged_user_client):
         get_res = logged_user_client.get(
             f"/users/{current_user.username}/databases/test"
         )
-        assert b'"Steven"' in get_res.data
+        assert (
+            b'"pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str"'
+            in get_res.data
+        )
         page = 2
         page_size = 11
         get_res1 = logged_user_client.get(
@@ -222,7 +231,7 @@ def test_userdatabases_loggedout(client):
     put_res = client.put("/users/user/databases", data=dict(database="newname"))
     assert b"method is not allowed" in put_res.data
     post_res = client.post("/users/user/databases")
-    assert b"method is not allowed" in post_res.data
+    assert b"Access unauthorized!" in post_res.data
 
 
 def test_user_database_loggedout(client):

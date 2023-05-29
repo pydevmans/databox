@@ -20,13 +20,29 @@ if __name__ == "__main__":
 
     # Testing with SWAPI
     # url = "https://swapi.dev/api/people/"
-    # t = FormattedTable("TestCharacters", ("name:str", "height:int", "mass:int",
-    #                         "hair_color:str", "skin_color:str", "eye_color:str", "birth_year:str",
-    #                         "gender:str", "homeworld:str", "films:list", "species:list", "vehicles:list",
-    #                         "starship:list", "created:str", "edited:str", "url:str")
+    # t = Table(
+    #     "TestCharacters",
+    #     (
+    #         "name:str",
+    #         "height:int",
+    #         "mass:int",
+    #         "hair_color:str",
+    #         "skin_color:str",
+    #         "eye_color:str",
+    #         "birth_year:str",
+    #         "gender:str",
+    #         "homeworld:str",
+    #         "films:list",
+    #         "species:list",
+    #         "vehicles:list",
+    #         "starships:list",
+    #         "created:str",
+    #         "edited:str",
+    #         "url:str",
+    #     ),
     # )
     # for i in range(1, 10):
-    #     people = requests.get(url+str(i))
+    #     people = requests.get(url + str(i))
     #     people_dict = json.loads(people.text)
     #     t.insert(**people_dict)
 
@@ -47,7 +63,7 @@ if __name__ == "__main__":
     # print("[ANS1]", [i.pk for i in ans1], " [LEN OF ANS1]", len(ans1))
 
     # Access Exisiting Tables and perform all needed operations.
-    t = AggregatableTable.access_table("users")
+    # t = AggregatableTable.access_table("users")
     # people = random_user_generator()
     # t.insert(**people)
     # t.aggregate.equal("pk", 9)
@@ -89,31 +105,31 @@ if __name__ == "__main__":
     # records = t.execute()
 
     # implement username and secret field in the database
-    t = AggregatableTable(
-        "TestUser",
-        (
-            "first_name:str",
-            "last_name:str",
-            "username:unique-str",
-            "password:secret-str",
-        ),
-    )
-    t_instance = {
-        "first_name": "John",
-        "last_name": "Doe",
-        "username": "jdoe9",
-        "password": "Secret123!",
-    }
-    t_instance1 = {
-        "first_name": "Jason",
-        "last_name": "Doll",
-        "username": "jd9",
-        "password": "SimplySecret123!",
-    }
-    t.insert(t_instance)
-    t.insert(t_instance1)
-    instances = t.from_database()
+    # t = AggregatableTable(
+    #     "TestUser",
+    #     (
+    #         "first_name:str",
+    #         "last_name:str",
+    #         "username:unique-str",
+    #         "password:secret-str",
+    #     ),
+    # )
+    # t_instance = {
+    #     "first_name": "John",
+    #     "last_name": "Doe",
+    #     "username": "jdoe9",
+    #     "password": "Secret123!",
+    # }
+    # t_instance1 = {
+    #     "first_name": "Jason",
+    #     "last_name": "Doll",
+    #     "username": "jd9",
+    #     "password": "SimplySecret123!",
+    # }
+    # t.insert(t_instance)
+    # t.insert(t_instance1)
+    # instances = t.from_database()
 
-    import pdb
+    # import pdb
 
-    pdb.set_trace()
+    # pdb.set_trace()

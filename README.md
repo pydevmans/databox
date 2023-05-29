@@ -29,6 +29,7 @@
 - /users/`<username:str>`/databases
   - `get`: list all the database
   - `delete`: delete all the <B>databases</B>
+  - `post`: creates the <B>databases</B>
 - /users/`<username:str>`/databases/`<database:str>`
   - `get`: list records (view only)
     - Apply Pagination and all sorts of URL Query Parameter Operations
@@ -46,7 +47,7 @@
 
 - to login user
 
-  `curl http://127.0.0.1:5000/login -X POST -d "username=user0" -d "password=HelloWorld2023!" -v`
+  `curl http://127.0.0.1:5000/login -X POST -d "username=user2" -d "password=HelloWorld2023!" -v`
 
 - to access protected endpoint
   `curl --cookie "session=<session_key>" http://127.0.0.1:5000/test`
@@ -54,6 +55,9 @@
 
 - to logout the user
   `curl http://127.0.0.1:5000/logout`
+
+- to create database
+  `curl http://127.0.0.1:5000/users/user2/databases -X POST --cookie "session=<session_key>" -d "title=<title_here>" -d "fields=name:str,dob:str,role:str,emp_no:int,salary:int,phone:int,office:str"`
 
 ## Sources:
 

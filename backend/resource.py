@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 from enum import Enum
 from backend import (
@@ -171,6 +172,25 @@ class UserDatabases(Resource):
     def delete(self, username):
         shutil.rmtree(f"database/usernames/{username}")
         return {"message": "Successfully removed All Database"}
+
+    @login_required
+    @is_users_content
+    def post(self, username):
+        if not (
+            re.fullmatch("[\w]*", request.form["title"])
+            and re.fullmatch("[\w:,()'\" ]*", request.form["fields"])
+        ):
+            raise HTTPException(
+                """
+            Make sure `title` is starting with letters and is alphanumerical. whereas `fields` \
+            are in format of `('field_1:type', 'field_2:type',...)` where `type` is one of `(str, int, float, bool, none)`"""
+            )
+        title = request.form["title"].lower()
+        fields = tuple(request.form["fields"].lower().split(","))
+        table = ClientServiceType(current_user).get_table_klass()
+        tablename = f"usernames/{username}/title"
+        table(tablename, fields)
+        return {"message": f"Successfully created {title}."}
 
 
 class UserDatabase(Resource):
