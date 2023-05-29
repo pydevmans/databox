@@ -228,6 +228,11 @@ class FormattedTable(Table):
     def read(self):
         return list(self._read())
 
+    def get_records(self):
+        return [
+            line.rstrip() for line in generic_open(self.filelocation, "r").readlines()
+        ]
+
     def query(self, **kwargs):
         """
         This method is here to provide one parameter lookup only.

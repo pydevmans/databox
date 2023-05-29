@@ -183,7 +183,7 @@ class UserDatabase(Resource):
         if qs:
             return Process_QS(qs, table).process()
         try:
-            return table.read()
+            return table.get_records()
         except AttributeError:
             raise upgrade_exception(current_user)
 
