@@ -14,6 +14,7 @@ from backend import (
     Logout,
     AggregatableTable,
 )
+from werkzeug.exceptions import Unauthorized
 
 app = Flask(__name__)
 app.config.from_pyfile("config.py")
@@ -27,6 +28,11 @@ def load_user(username):
     table = AggregatableTable.access_table("users")
     user = User(table.query(username=username)[0])
     return user
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    raise Unauthorized("Access unauthorized! Make sure to login.")
 
 
 api.add_resource(HomePage, "/")
@@ -48,3 +54,7 @@ api.add_resource(
 @login_required
 def test():
     return {"secret": "This is a Secret!"}
+
+
+if __name__ == "__main__":
+    app.run()
