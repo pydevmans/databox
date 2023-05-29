@@ -122,7 +122,10 @@ def test_user_database(logged_user_client):
         get_res = logged_user_client.get(
             f"/users/{current_user.username}/databases/test"
         )
-        assert b'"Steven"' in get_res.data
+        assert (
+            b'"pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str"'
+            in get_res.data
+        )
         shutil.copy(
             f"database/usernames/{current_user.username}/backup.txt",
             f"database/usernames/{current_user.username}/sample.txt",
@@ -154,7 +157,10 @@ def test_user_database(logged_user_client):
         get_res = logged_user_client.get(
             f"/users/{current_user.username}/databases/test"
         )
-        assert b'"Steven"' in get_res.data
+        assert (
+            b'"pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str"'
+            in get_res.data
+        )
         page = 2
         page_size = 11
         get_res1 = logged_user_client.get(
