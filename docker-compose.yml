@@ -1,0 +1,10 @@
+services:
+  backend:
+    build:
+      context: .
+    ports:
+      - "8080:80" 
+    networks:
+      - host
+networks:
+  host:

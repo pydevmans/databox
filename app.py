@@ -48,7 +48,3 @@ api.add_resource(
 @login_required
 def test():
     return {"secret": "This is a Secret!"}
-
-
-if __name__ == "__main__":
-    app.run()

@@ -73,10 +73,44 @@
 
 `pip freeze > requirements.txt`
 
-`set FLASK_APP=app.py`
+`set FLASK_APP=app.py` (For Win)
 
 `set FLASK_DEBUG=0 or 1`
+
+`export FLASK_APP=app.py` (For Linux)
+
+`export FLASK_DEBUG=0 or 1`
 
 `flask run` (for production)
 
 `flask run --reload --debugger` (for testing)
+
+## For performance Testing in Web Browser:
+
+- to get the general idea about request-response timing
+
+`curl http://127.0.0.1:8080`
+
+- Time taken to <i>login</i>
+
+`curl http://127.0.0.1:8080/login -X POST -d "username=user2" -d "password=HelloWorld2023!" -v`
+
+- Time take to access database
+
+`http://127.0.0.1:8080/users/user2/databases`
+
+- Time taken to access small file (`profiles`)
+
+`http://127.0.0.1:8080/users/user2/databases/profiles`
+
+- Time taken for search query parameter
+
+`http://127.0.0.1:8080/users/user2/databases/profiles?page=50&page-size=10`
+
+- Time taken
+
+`http://127.0.0.1:8080/users/user2/databases/profiles?first_name-sw=Lee&age-ge=18&age-le=55&last_name-sw=G&pk-gt=500&pk-le=9975`
+
+Multiple Queries: ~60-70ms
+Pagination: 55ms (size=10)
+Total access: 108ms

@@ -104,9 +104,14 @@ class SignUp(Resource):
         try:
             kwargs["password"] = create_hash_password(kwargs["password"])
             kwargs["membership"] = int(kwargs["membership"])
+            username = kwargs["username"]
         except KeyError:
             raise HTTPException("Invalid request.")
         users_table = AggregatableTable.access_table("users")
+        if username in os.listdir("database/usernames"):
+            raise HTTPException(
+                f"""Given username: `{username}` is already taken. Please try diffrent one."""
+            )
         try:
             users_table.insert(**kwargs)
         except:
