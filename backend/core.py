@@ -2,7 +2,7 @@ import os
 import re
 import itertools
 from math import ceil
-from .helpers import sw, generic_open
+from .helpers import sw, generic_open, _in
 from .gen_response import upgrade_exception, invalid_query_string, invalid_field_name
 from collections import namedtuple
 from flask_login import current_user
@@ -24,6 +24,9 @@ class TypeDoesntConfirmDefination(HTTPException):
 
 
 class Table:
+    limit_database = 5
+    limit_records = 100
+
     def __init__(self, tablename, columns, joiner="|"):
         """
         Title/Header/Column-Name for Table is passed as tuple.
@@ -73,13 +76,19 @@ class Table:
         """
         This method is used to update membership features to inform end-users of product.
         """
-        return ["Relationl Database"]
+        return {
+            "feat": ["Relational Database", "insert method to insert record"],
+            "database_limit": Table.limit_database,
+            "record_limit": Table.limit_records,
+        }
 
     def insert(self, **kwargs):
         """
         Inserts record to the database when intialising it
         Converts all the field to `str(field)` before inserting into database.
         """
+        if self.last_pk >= self.limit_records:
+            raise upgrade_exception()
         with generic_open(self.filelocation, mode="a") as file:
             fields = list(map(lambda x: x.split(":")[0], self.columns))
             data = str(self.last_pk)
@@ -145,6 +154,9 @@ class Paginator:
 
 
 class FormattedTable(Table):
+    limit_database = 50
+    limit_records = 1000
+
     def __init__(self, tablename, columns, joiner="|"):
         Table.__init__(self, tablename, columns, joiner="|")
         self.field_format = dict()
@@ -163,30 +175,25 @@ class FormattedTable(Table):
                 self.field_format.update({title: str})
             elif "int" in col:
                 self.field_format.update({title: int})
-            elif "list" in col:
-                self.field_format.update({title: list})
-            elif "dict" in col:
-                self.field_format.update({title: dict})
             elif "float" in col:
                 self.field_format.update({title: float})
             elif "bool" in col.lower():
                 self.field_format.update({title: bool})
-            elif "none" in col.lower():
-                self.field_format.update({title: None})
             else:
                 raise NotAValidFieldType(
-                    f"The field '{title}' is not valid field description."
-                    "Please provide valid type description [str, int, list,"
-                    "dict, float. bool, None]"
+                    f"The type for field '{title}' is not valid field"
+                    "description. Please provide valid type description"
+                    "[str, int, float. bool]"
                 )
 
     def _type_checking(self, **kwargs):
         """
-        Exclusively used for the insertion of the record to the FormattedTable.
-        Performs type checking of the record data with type parsed from the field defination.
-        Prevents mismatched datatype entry in Table.
-        Raises `TypeDoesntConfirmDefination` when datatypes don't match.
-        Method ignores all the extra `kwargs` as long as `all` needed kwargs are passed.
+        Exclusively used for the insertion of the record to the
+        FormattedTable. Performs type checking of the record data with type
+        parsed from the field defination. Prevents mismatched datatype entry
+        in Table. Raises `TypeDoesntConfirmDefination` when datatypes don't
+        match. Method ignores all the extra `kwargs` as long as `all` needed
+        kwargs are passed.
         """
         _ = []
         for fields in tuple(self.field_format.keys())[1:]:
@@ -196,16 +203,40 @@ class FormattedTable(Table):
                 else:
                     _.append(fields)
             except KeyError:
-                raise HTTPException(f"""Invalid request. Check fields: `{fields}`.""")
+                raise HTTPException(f"Invalid request. Check fields: `{fields}`.")
         if _:
             raise HTTPException(f"Invalid request. Field `{_}` has invalid value type.")
+
+    def _type_compliable(self, **kwargs):
+        for fields in tuple(self.field_format.keys())[1:]:
+            try:
+                if type(kwargs[fields]) == self.field_format[fields]:
+                    pass
+                else:
+                    kwargs[fields] = self.field_format[fields](kwargs[fields])
+            except KeyError:
+                raise HTTPException(f"""Invalid request. Check fields: `{fields}`.""")
+            except ValueError:
+                raise HTTPException(f"Field:`{fields}` is compliant to defination")
 
     @staticmethod
     def _features():
         """
         This method is used to update membership features to inform end-users of product.
         """
-        return ["Type compliant"]
+        parent_feat = Table._features()
+        table_feat = {
+            "feat": [
+                "Type Compliant Database",
+                "query method to lookup by one field",
+                "delete method to delete record by `pk`",
+                # "Generator based memory-efficient and faster lookup and quering on multiple fields O(nlogn)",
+            ],
+            "database_limit": FormattedTable.limit_database,
+            "record_limit": FormattedTable.limit_records,
+        }
+        table_feat["feat"].extend(parent_feat["feat"])
+        return table_feat
 
     def _read(self):
         """
@@ -216,7 +247,7 @@ class FormattedTable(Table):
             for line in generic_open(self.filelocation, "r")
             if line.strip() != ""
         )
-        cols = (col.split("|") for col in lines)
+        cols = (line.split("|") for line in lines)
         next(lines)  # title_record
         types = tuple(self.field_format.values())
         casted_args = (
@@ -271,7 +302,7 @@ class FormattedTable(Table):
         Unlike parent's insert method, this method does _type_checking
         before inserting record into
         """
-        self._type_checking(**kwargs)
+        self._type_compliable(**kwargs)
         Table.insert(self, **kwargs)
 
     def from_database(self):
@@ -319,6 +350,9 @@ class AggregateOperations:
 
 
 class AggregatableTable(FormattedTable):
+    limit_database = 500
+    limit_records = 10000
+
     def __init__(self, tablename, columns, joiner="|"):
         FormattedTable.__init__(self, tablename, columns)
         self.aggregate = AggregateOperations()
@@ -335,11 +369,13 @@ class AggregatableTable(FormattedTable):
             "ge": ge,
             "eq": eq,
             "sw": sw,
+            "in": _in,
         }
         do_process_record = False
         # this for loop gets all `field`, `op` has provided to process
         for field_key, field_aggr_value in self.aggregate.ops.items():
-            # this for loop performs all `Operation`s needed to be perform on field of records
+            # this for loop performs all `Operation`s needed to be perform on
+            # field of records
             for op in field_aggr_value:
                 if (
                     hashmap_operation[op["op"]](getattr(record, field_key), op["value"])
@@ -361,7 +397,16 @@ class AggregatableTable(FormattedTable):
         """
         This method is used to update membership features to inform end-users of product.
         """
-        return ["Data Aggregation"]
+        parent_feat = FormattedTable._features()
+        table_feat = {
+            "feat": [
+                "Generator based memory-efficient and faster lookup and quering on multiple fields O(nlogn)",
+            ],
+            "database_limit": AggregatableTable.limit_database,
+            "record_limit": AggregatableTable.limit_records,
+        }
+        table_feat["feat"].extend(parent_feat["feat"])
+        return table_feat
 
     def execute(self):
         """
@@ -392,7 +437,7 @@ class Process_QS:
             return self.process_url_parameter()
 
     def process_url_parameter(self):
-        operations = ("gt", "ge", "le", "lt", "eq", "ne", "sw")
+        operations = ("gt", "ge", "le", "lt", "eq", "ne", "sw", "in")
         for op in self.qs.split("&"):
             field_operation, _, val = op.partition("=")
             if _ != "=":
@@ -414,7 +459,7 @@ class Process_QS:
             except KeyError:
                 return invalid_field_name(field)
             except AttributeError:
-                raise upgrade_exception(current_user)
+                raise upgrade_exception()
         return self.table.execute()
 
     def process_pagination(self):
@@ -439,7 +484,7 @@ class Process_QS:
         try:
             return Paginator(self.table.read(), page, page_size).serve()
         except AttributeError:
-            raise upgrade_exception(current_user)
+            raise upgrade_exception()
 
     def process(self):
         return self.process_pagination_or_url_parameter()

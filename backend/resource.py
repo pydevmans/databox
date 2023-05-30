@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 from enum import Enum
 from backend import (
@@ -70,6 +71,8 @@ class HomePage(Resource):
                 "Flask-RESTful",
                 "pytest",
             ],
+            "For General help": "visit http://mb9.pythonanywhere.com/help",
+            "For Logged in User based help": "visit http://mb9.pythonanywhere.com/helpcenter",
         }
 
 
@@ -95,7 +98,11 @@ class UserProfile(Resource):
     @is_users_content
     def get(self, username):
         users_table = AggregatableTable.access_table("users")
-        return users_table.query(username=username)[0]
+        resp = dict()
+        resp["userdata"] = users_table.query(username=username)[0]
+        table = ClientServiceType(current_user).get_table_klass()
+        resp["feature_for_user"] = table._features()
+        return resp
 
 
 class SignUp(Resource):
@@ -119,7 +126,7 @@ class SignUp(Resource):
         os.mkdir(
             f"database/usernames/{kwargs['username']}",
         )
-        return {"message": "request to add user was successsful."}
+        return {"message": "request to add user was successful."}
 
 
 class Login(Resource):
@@ -172,6 +179,31 @@ class UserDatabases(Resource):
         shutil.rmtree(f"database/usernames/{username}")
         return {"message": "Successfully removed All Database"}
 
+    @login_required
+    @is_users_content
+    def post(self, username):
+        if not (
+            re.fullmatch("[\w]*", request.form["title"])
+            and re.fullmatch("[\w:,()'\" ]*", request.form["fields"])
+        ):
+            raise HTTPException(
+                "Make sure `title` is starting with letters and is "
+                "alphanumerical. Whereas `fields` are in format of"
+                "`('field_1:type', 'field_2:type',...)` where `type`"
+                "is one of `(str, int, float, bool, none)`"
+            )
+        title = request.form["title"].lower()
+        fields = tuple(request.form["fields"].lower().split(","))
+        table = ClientServiceType(current_user).get_table_klass()
+        tablename = f"usernames/{username}/{title}"
+        if (
+            len(os.listdir(f"database/usernames/{current_user.username}"))
+            >= table.limit_database
+        ):
+            raise upgrade_exception()
+        table(tablename, fields)
+        return {"message": f"Successfully created database:`{title}`."}
+
 
 class UserDatabase(Resource):
     @login_required
@@ -185,7 +217,7 @@ class UserDatabase(Resource):
         try:
             return table.get_records()
         except AttributeError:
-            raise upgrade_exception(current_user)
+            raise upgrade_exception()
 
     @login_required
     @is_users_content
@@ -195,13 +227,28 @@ class UserDatabase(Resource):
             f"database/usernames/{username}/{database}.txt",
             f"database/usernames/{username}/{name}.txt",
         )
-        return {"message": f"Successfully renamed to `{name}`."}
+        return {"message": f"Successfully renamed Database to `{name}`."}
 
     @login_required
     @is_users_content
     def delete(self, username, database):
         os.remove(f"database/usernames/{username}/{database}.txt")
         return {"message": f"Successfully removed {database} Database"}
+
+    @login_required
+    @is_users_content
+    def post(self, username, database):
+        table = ClientServiceType(current_user).get_table_klass()
+        table = table.access_table(f"usernames/{username}/{database}")
+        for key in request.form:
+            if not re.fullmatch("[\w, -.]*", request.form[key]):
+                raise HTTPException(
+                    f"Records can only contain Alphabets, Numbers, _, -,"
+                    " , ., ,. Check value for field: `{key}`."
+                )
+        kwargs = request.form.to_dict()
+        table.insert(**kwargs)
+        return {"message": f"Successfully added record to database:`{database}`."}
 
 
 class InteracDatabase(Resource):
@@ -213,7 +260,7 @@ class InteracDatabase(Resource):
         try:
             record = table.query(pk=pk)
         except AttributeError:
-            raise upgrade_exception(current_user)
+            raise upgrade_exception()
         return record
 
     @login_required
@@ -224,5 +271,5 @@ class InteracDatabase(Resource):
         try:
             table.delete(pk=pk)
         except AttributeError:
-            raise upgrade_exception(current_user)
+            raise upgrade_exception()
         return {"message": f"Successfully removed {database} Database"}

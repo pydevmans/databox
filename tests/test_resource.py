@@ -63,7 +63,7 @@ def test_signup(client):
         ),
         follow_redirects=True,
     )
-    assert b"request to add user was successsful." in post_res.data
+    assert b"request to add user was successful." in post_res.data
     shutil.rmtree("database/usernames/jdoe")
 
     post_res_1 = client.post(
@@ -113,8 +113,12 @@ def test_userdatabases(logged_user_client):
         f"/users/{current_user.username}/databases", data=dict(database="newname")
     )
     assert b"method is not allowed" in put_res.data
-    post_res = logged_user_client.post(f"/users/{current_user.username}/databases")
-    assert b"method is not allowed" in post_res.data
+    post_res = logged_user_client.post(
+        f"/users/{current_user.username}/databases",
+        data={"title": "testing", "fields": "name:str,age:int"},
+    )
+    assert b"Successfully created " in post_res.data
+    os.remove(f"database/usernames/{current_user.username}/testing.txt")
 
 
 def test_user_database(logged_user_client):
@@ -228,7 +232,7 @@ def test_userdatabases_loggedout(client):
     put_res = client.put("/users/user/databases", data=dict(database="newname"))
     assert b"method is not allowed" in put_res.data
     post_res = client.post("/users/user/databases")
-    assert b"method is not allowed" in post_res.data
+    assert b"Access unauthorized!" in post_res.data
 
 
 def test_user_database_loggedout(client):

@@ -373,12 +373,12 @@ def check_password(password, hash_orig_password):
         return False
 
 
-def sw(field, pattern):
+def sw(value, pattern):
     try:
-        if field.startswith(pattern):
+        if value.startswith(pattern):
             return True
     except AttributeError:
-        if str(field).startswith(str(pattern)):
+        if str(value).startswith(str(pattern)):
             return True
     else:
         return False
@@ -422,3 +422,10 @@ def generic_open(filename, mode):
         return open(filename, mode=mode)
     except FileNotFoundError:
         raise HTTPException("Please check the URL!")
+
+
+def _in(value, pattern):
+    if pattern in value:
+        return True
+    else:
+        return False
