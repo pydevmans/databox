@@ -52,12 +52,12 @@ class HomePage(Resource):
             "title": "Welcome to DataBox!!",
             "application-features": [
                 "Relational Database style `CRD` performant file based Database service",
-                "int, str, float, secret(in hashable format) and unique field types",
+                "int, str, float field types",
                 "3 types of Membership to access Service",
                 "RESTful API Endpoint to utilize service",
                 "Responses are in JSON, hence Incorporable with Any Tech Stack",
                 "Containerised light weight application",
-                "Atleast 85% of the test coverage for each modu",
+                "~90% of the test coverage with unittest and application testing",
             ],
             "key-highlight": [
                 "~Constant memory utilisation regardless of size of the database",

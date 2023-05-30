@@ -54,12 +54,12 @@ api.add_resource(
 def help():
     return {
         "To Sign Up User": "curl http://mb9.pythonanywhere.com/signup -d"
-        'first_name=<first_name>" -d "last_name=<last_name>" -d'
-        '"membership=<0|1|2>" -d "username=<username>" -d'
+        ' "first_name=<first_name>" -d "last_name=<last_name>" -d'
+        ' "membership=<0|1|2>" -d "username=<username>" -d'
         ' "email_address=<email_address>" -d "password=<password>"',
         "To Sign In": "curl http://mb9.pythonanywhere.com/login -X POST -d"
         ' "username=<username>" -d "password=<password>" -v',
-        "To Log out": "curl http://mb9.pythonanywhere.com/logout",
+        "To Log out": 'curl --cookie "session=<session_key>" http://mb9.pythonanywhere.com/logout',
         "To Checkout featurs": "curl http://mb9.pythonanywhere.com/features",
         "To See General help": "curl http://mb9.pythonanywhere.com/help",
         "To See all logged in user based help": "curl http://mb9.pythonanywhere.com/helpcenter",
