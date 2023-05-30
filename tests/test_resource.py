@@ -63,7 +63,7 @@ def test_signup(client):
         ),
         follow_redirects=True,
     )
-    assert b"request to add user was successsful." in post_res.data
+    assert b"request to add user was successful." in post_res.data
     shutil.rmtree("database/usernames/jdoe")
 
     post_res_1 = client.post(
@@ -118,6 +118,7 @@ def test_userdatabases(logged_user_client):
         data={"title": "testing", "fields": "name:str,age:int"},
     )
     assert b"Successfully created " in post_res.data
+    os.remove(f"database/usernames/{current_user.username}/testing.txt")
 
 
 def test_user_database(logged_user_client):

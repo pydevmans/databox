@@ -1,4 +1,5 @@
 from werkzeug.exceptions import HTTPException
+from flask_login import current_user
 
 error_400 = {
     "message": "Server can not understand your request!",
@@ -26,7 +27,7 @@ def invalid_field_name(fields):
     return {"message": f"The field: `{fields}` are not valid."}
 
 
-def upgrade_exception(current_user):
+def upgrade_exception():
     return HTTPException(
         f"""Current Plan:\
         `{current_user.membership.name.capitalize()}` does not have \

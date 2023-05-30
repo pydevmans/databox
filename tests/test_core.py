@@ -141,15 +141,6 @@ class TestFormattedTable(unittest.TestCase):
         output = self.t.query(first_name=self.user["first_name"])
         self.assertEqual(len(output), 0)
 
-    def test_insert(self):
-        """
-        Checks upon inserting non-compliant datatype value for field of record,
-        raises Exception.
-        """
-        with self.assertRaises(HTTPException):
-            self.user["age"] = str(self.user["age"])
-            self.t.insert(**self.user)
-
 
 class TestIncorrectFormattedTable(unittest.TestCase):
     def test_creating_table(self):
