@@ -60,9 +60,9 @@ class HomePage(Resource):
                 "Atleast 85% of the test coverage for each modu",
             ],
             "key-highlight": [
-                "Constant memory utilisation regardless of size of the database",
-                "Constant time Lookup, Indexing of data regardless of size of the database",
-                "Constant time lookup with Primary Key or Pagination regardless of size of the database",
+                "~Constant memory utilisation regardless of size of the database",
+                "~Linear time Lookup on many fields of record regardless of size of the database",
+                "~Linear time lookup with Primary Key or Pagination regardless of size of the database",
                 "Efficient Aggregation with as many criteria upon any/many field(s) of database",
             ],
             "tech-stacks": [
@@ -154,10 +154,8 @@ class Logout(Resource):
 
 
 class MembershipFeatures(Resource):
-    """
-    This class lists all the features that are set out to be provided among all
-    3 classes of membership type.
-    """
+    "This class lists all the features that are set out to be provided among"
+    "all 3 classes of membership type."
 
     def get(self):
         return {
@@ -196,11 +194,12 @@ class UserDatabases(Resource):
         fields = tuple(request.form["fields"].lower().split(","))
         table = ClientServiceType(current_user).get_table_klass()
         tablename = f"usernames/{username}/{title}"
-        if (
-            len(os.listdir(f"database/usernames/{current_user.username}"))
-            >= table.limit_database
-        ):
-            raise upgrade_exception()
+        cx_databases = len(os.listdir(f"database/usernames/{current_user.username}"))
+        if cx_databases >= table.limit_database:
+            raise upgrade_exception(
+                f"Your membership allows `{table.limit_database}` whereas "
+                f"currently you have `{cx_databases}`."
+            )
         table(tablename, fields)
         return {"message": f"Successfully created database:`{title}`."}
 

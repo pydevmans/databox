@@ -27,10 +27,9 @@ def invalid_field_name(fields):
     return {"message": f"The field: `{fields}` are not valid."}
 
 
-def upgrade_exception():
+def upgrade_exception(message=""):
     return HTTPException(
-        f"""Current Plan:\
-        `{current_user.membership.name.capitalize()}` does not have \
-        sufficient features. Please upgrade the plan.
-    """
+        f"Current Plan: `{current_user.membership.name.capitalize()}` does"
+        "not have sufficient features. Please upgrade the plan."
+        f"{message}"
     )

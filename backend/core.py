@@ -88,7 +88,10 @@ class Table:
         Converts all the field to `str(field)` before inserting into database.
         """
         if self.last_pk >= self.limit_records:
-            raise upgrade_exception()
+            raise upgrade_exception(
+                f"Your membership allows `{self.limit_records}` whereas "
+                "currently you have `{self.last_pk}`."
+            )
         with generic_open(self.filelocation, mode="a") as file:
             fields = list(map(lambda x: x.split(":")[0], self.columns))
             data = str(self.last_pk)

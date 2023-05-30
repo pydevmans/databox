@@ -63,7 +63,6 @@ def help():
         "To Checkout featurs": "curl http://mb9.pythonanywhere.com/features",
         "To See General help": "curl http://mb9.pythonanywhere.com/help",
         "To See all logged in user based help": "curl http://mb9.pythonanywhere.com/helpcenter",
-        "To List all routes on Application": "curl http://mb9.pythonanywhere.com/routes",
     }
 
 
@@ -108,6 +107,24 @@ def helpcenter():
         "om/users/<username>/databases/<database>/<pk_of_record>",
         "To Delete the record by primary key for specific Database": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
         "anywhere.com/users/<username>/databases/<database>/<pk_of_record>",
+    }
+
+
+@app.route("/privileged")
+def privileged():
+    return {
+        "free_membership": {
+            "username": "user0",
+            "password": "HelloWorld2023!",
+        },
+        "basic_membership": {
+            "username": "user1",
+            "password": "HelloWorld2023!",
+        },
+        "premium_membership": {
+            "username": "user2",
+            "password": "HelloWorld2023!",
+        },
     }
 
 
