@@ -20,27 +20,27 @@ if __name__ == "__main__":
 
     # Testing with SWAPI
     # url = "https://swapi.dev/api/people/"
-    # t = Table(
-    #     "TestCharacters",
-    #     (
-    #         "name:str",
-    #         "height:int",
-    #         "mass:int",
-    #         "hair_color:str",
-    #         "skin_color:str",
-    #         "eye_color:str",
-    #         "birth_year:str",
-    #         "gender:str",
-    #         "homeworld:str",
-    #         "films:list",
-    #         "species:list",
-    #         "vehicles:list",
-    #         "starships:list",
-    #         "created:str",
-    #         "edited:str",
-    #         "url:str",
-    #     ),
-    # )
+    t = Table(
+        "TestCharacters",
+        (
+            "name:str",
+            "height:int",
+            "mass:int",
+            "hair_color:str",
+            "skin_color:str",
+            "eye_color:str",
+            "birth_year:str",
+            "gender:str",
+            "homeworld:str",
+            "films:list",
+            "species:list",
+            "vehicles:list",
+            "starships:list",
+            "created:str",
+            "edited:str",
+            "url:str",
+        ),
+    )
     # for i in range(1, 10):
     #     people = requests.get(url + str(i))
     #     people_dict = json.loads(people.text)
@@ -129,7 +129,3 @@ if __name__ == "__main__":
     # t.insert(t_instance)
     # t.insert(t_instance1)
     # instances = t.from_database()
-
-    # import pdb
-
-    # pdb.set_trace()
