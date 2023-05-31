@@ -90,7 +90,7 @@ class Table:
         if self.last_pk >= self.limit_records:
             raise upgrade_exception(
                 f"Your membership allows `{self.limit_records}` whereas "
-                "currently you have `{self.last_pk}`."
+                f"currently you have `{self.last_pk}`."
             )
         with generic_open(self.filelocation, mode="a") as file:
             fields = list(map(lambda x: x.split(":")[0], self.columns))
@@ -178,6 +178,10 @@ class FormattedTable(Table):
                 self.field_format.update({title: str})
             elif "int" in col:
                 self.field_format.update({title: int})
+            elif "list" in col:
+                self.field_format.update({title: list})
+            elif "dict" in col:
+                self.field_format.update({title: dict})
             elif "float" in col:
                 self.field_format.update({title: float})
             elif "bool" in col.lower():
@@ -186,7 +190,7 @@ class FormattedTable(Table):
                 raise NotAValidFieldType(
                     f"The type for field '{title}' is not valid field"
                     "description. Please provide valid type description"
-                    "[str, int, float. bool]"
+                    "[str, int, float. bool, list, dict]"
                 )
 
     def _type_checking(self, **kwargs):

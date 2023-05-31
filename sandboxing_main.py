@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # url = input("Enter the path: ")
 
     # Testing with SWAPI
-    # url = "https://swapi.dev/api/people/"
+    url = "https://swapi.dev/api/people/"
     t = Table(
         "TestCharacters",
         (
@@ -41,10 +41,10 @@ if __name__ == "__main__":
             "url:str",
         ),
     )
-    # for i in range(1, 10):
-    #     people = requests.get(url + str(i))
-    #     people_dict = json.loads(people.text)
-    #     t.insert(**people_dict)
+    for i in range(1, 10):
+        people = requests.get(url + str(i))
+        people_dict = json.loads(people.text)
+        t.insert(**people_dict)
 
     # Testing with helpers method
     # t = FormattedTable("TestUserProfile", ("first_name:str", "last_name:str", "age:int", "address:str", "telephone:str", "phone:str", "email:str"))

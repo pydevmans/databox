@@ -52,7 +52,7 @@ class HomePage(Resource):
             "title": "Welcome to DataBox!!",
             "application-features": [
                 "Relational Database style `CRD` performant file based Database service",
-                "int, str, float field types",
+                "int, str, float field types, list and dict are work in process",
                 "3 types of Membership to access Service",
                 "RESTful API Endpoint to utilize service",
                 "Responses are in JSON, hence Incorporable with Any Tech Stack",
@@ -240,7 +240,7 @@ class UserDatabase(Resource):
         table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         for key in request.form:
-            if not re.fullmatch("[\w, -.]*", request.form[key]):
+            if not re.fullmatch("[\w, -/:.@]*", request.form[key]):
                 raise HTTPException(
                     f"Records can only contain Alphabets, Numbers, _, -,"
                     " , ., ,. Check value for field: `{key}`."

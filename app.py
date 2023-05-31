@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_restful import Api
-from flask_login import LoginManager, login_required
+from flask_login import LoginManager, login_required, current_user
 from backend import (
     User,
     UserProfile,
@@ -69,20 +69,21 @@ def help():
 @app.route("/helpcenter")
 @login_required
 def helpcenter():
-    return {
+    username = current_user.username
+    resp = {
         "To See the User profile": 'curl --cookie "session=<session_key>"'
-        " http://mb9.pythonanywhere.com/users/<username>/profile",
+        f" http://mb9.pythonanywhere.com/users/{username}/profile",
         "To Create Database": "curl http://mb9.pythonanywhere.com/users/"
-        '<username>/databases -X POST --cookie "session=<session_key>" -d '
+        f'{username}/databases -X POST --cookie "session=<session_key>" -d '
         '"title=<title_here>" -d "fields=name:str,age:int"',
         "To List all Database user has": 'curl --cookie "session=<session_key>'
-        '" http://mb9.pythonanywhere.com/users/<username>/databases',
+        f'" http://mb9.pythonanywhere.com/users/{username}/databases',
         "To get records in pages": 'curl --cookie "session=<session_key>" '
-        "http://mb9.pythonanywhere.com/users/<username>/databases?page=<page "
+        f"http://mb9.pythonanywhere.com/users/{username}/databases?page=<page "
         "number>&page-size=<items per page>",
         "To Query database on as many fields": {
             "command": 'curl --cookie "session=<session_key>" http://mb9.pytho'
-            "nanywhere.com/users/<username>/databases?<field>-<op>=<value>&<fi"
+            f"nanywhere.com/users/{username}/databases?<field>-<op>=<value>&<fi"
             "eld>-<op>=<value>",
             "Valid `op` are": "(lt, gt, ge, le, eq, ne, sw)",
             "lt": "Less Than",
@@ -94,20 +95,21 @@ def helpcenter():
             "sw": "Start With",
         },
         "To Delete `ALL` Database user has": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
-        "anywhere.com/users/<username>/databases",
+        f"anywhere.com/users/{username}/databases",
         "To List all record of Database": 'curl --cookie "session=<session_key>" http://mb9.pythonanywhere.c'
-        "om/users/<username>/databases/<database>",
+        f"om/users/{username}/databases/<database>",
         "To Add record to Database": 'curl --cookie "session=<session_key>" -X POST http://mb9.pythonan'
-        "ywhere.com/users/<username>/databases/<database>",
+        f"ywhere.com/users/{username}/databases/<database>",
         "To Rename the Database": 'curl --cookie "session=<session_key>" -X PUT http://mb9.pythonany'
-        "where.com/users/<username>/databases/<database>",
+        f"where.com/users/{username}/databases/<database>",
         "To Delete specific Database": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
-        "anywhere.com/users/<username>/databases/<database>",
+        f"anywhere.com/users/{username}/databases/<database>",
         "To Get record by Primary key for specific Database": 'curl --cookie "session=<session_key>" http://mb9.pythonanywhere.c'
-        "om/users/<username>/databases/<database>/<pk_of_record>",
+        f"om/users/{username}/databases/<database>/<pk_of_record>",
         "To Delete the record by primary key for specific Database": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
-        "anywhere.com/users/<username>/databases/<database>/<pk_of_record>",
+        f"anywhere.com/users/{username}/databases/<database>/<pk_of_record>",
     }
+    return resp
 
 
 @app.route("/privileged")
