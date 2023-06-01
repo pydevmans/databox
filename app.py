@@ -63,6 +63,7 @@ def help():
         "To Checkout featurs": "curl http://mb9.pythonanywhere.com/features",
         "To See General help": "curl http://mb9.pythonanywhere.com/help",
         "To See all logged in user based help": "curl http://mb9.pythonanywhere.com/helpcenter",
+        "To make all GET requests in browser type this command to console (<crypt_signed_session_key> can be found from response of `/login`)": "document.cookie = 'session=<crypt_signed_session_key>' # till `;`",
     }
 
 
