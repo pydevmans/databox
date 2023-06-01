@@ -118,14 +118,14 @@ class Table:
 
 
 class Paginator:
-    def __init__(self, resource, page, items_on_page=5):
+    def __init__(self, table, page, items_on_page=5):
         """
         Page for Paginator starts from `1` to the last page where last record can be found.
         """
-        self.resource = resource
+        self.table = table
         self.current_page = page
         self.items_on_page = items_on_page
-        self.total_page = ceil(len(self.resource) / self.items_on_page)
+        self.total_page = ceil(self.table.last_pk / self.items_on_page)
 
     def _has_prev_page(self):
         if (self.current_page - 1) > 0:
@@ -148,7 +148,7 @@ class Paginator:
         end = self.current_page * self.items_on_page
         resp = dict()
         resp["data"] = []
-        for item in itertools.islice(self.resource, start, end):
+        for item in itertools.islice(self.table._read(), start, end):
             resp["data"].append(item)
         resp["next_page"] = self._has_next_page()
         resp["prev_page"] = self._has_prev_page()
@@ -489,7 +489,7 @@ class Process_QS:
                 For size of page, define `page-size`."""
             )
         try:
-            return Paginator(self.table.read(), page, page_size).serve()
+            return Paginator(self.table, page, page_size).serve()
         except AttributeError:
             raise upgrade_exception()
 

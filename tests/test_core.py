@@ -87,18 +87,18 @@ class TestPaginator(unittest.TestCase):
         page = 2
         page_size = 10
         self.t = FormattedTable.access_table("usernames/user0/test")
-        resp = Paginator(self.t.read(), page, page_size).serve()
+        resp = Paginator(self.t, page, page_size).serve()
         assert resp["total_page"] == ceil(len(self.t.read()) / page_size)
         assert len(resp["data"]) == page_size
 
     def test_serve_1(self):
         self.t = FormattedTable.access_table("usernames/user0/test")
         with pytest.raises(HTTPException):
-            Paginator(self.t.read(), 10, 10).serve()
+            Paginator(self.t, 10, 10).serve()
         with pytest.raises(HTTPException):
-            Paginator(self.t.read(), 0, 10).serve()
+            Paginator(self.t, 0, 10).serve()
         with pytest.raises(HTTPException):
-            Paginator(self.t.read(), -112, 10).serve()
+            Paginator(self.t, -112, 10).serve()
 
 
 class TestFormattedTable(unittest.TestCase):
