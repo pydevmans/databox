@@ -58,6 +58,7 @@ class HomePage(Resource):
                 "Responses are in JSON, hence Incorporable with Any Tech Stack",
                 "Containerised light weight application",
                 "~90% of the test coverage with unittest and application testing",
+                "The 'user' database of this application is using this database service.",
             ],
             "key-highlight": [
                 "~Constant memory utilisation regardless of size of the database",
