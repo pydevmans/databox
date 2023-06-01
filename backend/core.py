@@ -284,13 +284,15 @@ class FormattedTable(Table):
                 """
             )
 
-        def myfunc(obj, **kwargs):
-            for key in kwargs.keys():
-                if getattr(obj, key, None) != kwargs[key]:
-                    return False
-            return True
-
-        return list(filter(lambda obj: myfunc(obj, **kwargs), self._read()))
+        output = []
+        for key in kwargs.keys():
+            for item in self._read():
+                if getattr(item, key) == kwargs[key]:
+                    output.append(item)
+                    break
+        if len(output) == 0:
+            raise HTTPException("No records were found.")
+        return output
 
     def delete(self, pk):
         if pk == 0:

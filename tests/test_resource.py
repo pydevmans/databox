@@ -4,6 +4,7 @@ import pytest
 from app import app
 from math import ceil
 from flask_login import current_user
+from backend import random_user_generator
 
 
 @pytest.fixture
@@ -119,6 +120,20 @@ def test_userdatabases(logged_user_client):
     )
     assert b"Successfully created " in post_res.data
     os.remove(f"database/usernames/{current_user.username}/testing.txt")
+
+
+def test_user_database_post(logged_user_client):
+    post_res = logged_user_client.post(
+        f"/users/{current_user.username}/databases/test",
+        data=random_user_generator(),
+    )
+    assert b"Successfully added record to database:" in post_res.data
+
+    post_res_1 = logged_user_client.post(
+        f"/users/{current_user.username}/databases/test",
+        data={"first_name": "!@#$%^&*", "last_name": "!@#$%^&*()"},
+    )
+    assert b"Records can only contain Alphabets, Numbers, _, -, , ." in post_res_1.data
 
 
 def test_user_database(logged_user_client):

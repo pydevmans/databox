@@ -138,8 +138,8 @@ class TestFormattedTable(unittest.TestCase):
     def test_delete(self):
         self.t.insert(**self.user)
         self.t.delete(pk=1)
-        output = self.t.query(first_name=self.user["first_name"])
-        self.assertEqual(len(output), 0)
+        with self.assertRaises(HTTPException):
+            self.t.query(first_name=self.user["first_name"])
 
 
 class TestIncorrectFormattedTable(unittest.TestCase):
