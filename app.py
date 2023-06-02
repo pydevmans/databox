@@ -1,4 +1,5 @@
-from flask import Flask
+import os
+from flask import Flask, send_from_directory, current_app
 from flask_restful import Api
 from flask_login import LoginManager, login_required, current_user
 from backend import (
@@ -13,6 +14,7 @@ from backend import (
     Login,
     Logout,
     AggregatableTable,
+    random_user_generator,
 )
 from werkzeug.exceptions import Unauthorized
 
@@ -64,6 +66,7 @@ def help():
         "To See General help": "curl http://mb9.pythonanywhere.com/help",
         "To See all logged in user based help": "curl http://mb9.pythonanywhere.com/helpcenter",
         "To make all GET requests in browser type this command to console (<crypt_signed_session_key> can be found from response of `/login`)": "document.cookie = 'session=<crypt_signed_session_key>' # till `;`",
+        "Download Py Script Test This App Functionality": "http://mb9.pythonanywhere.com/script",
     }
 
 
@@ -128,7 +131,21 @@ def privileged():
             "username": "user2",
             "password": "HelloWorld2023!",
         },
+        "Download Py Script Test This App Functionality": "http://mb9.pythonanywhere.com/script",
     }
+
+
+@app.route("/script")
+def script():
+    downloadables = os.path.join(
+        current_app.root_path, app.config["DOWNLOADABLES_FOLDER"]
+    )
+    return send_from_directory(downloadables, "client.py", as_attachment=True)
+
+
+@app.route("/random_users")
+def random_users():
+    return random_user_generator()
 
 
 @app.route("/test")

@@ -56,7 +56,7 @@ def test_signup(client):
         "/signup",
         data=dict(
             username="jdoe",
-            password="HelloWorldzzzz2023!",
+            password="HelloWorldzzzz2023",
             first_name="John",
             last_name="Doe",
             membership=2,
@@ -71,20 +71,26 @@ def test_signup(client):
         "/signup",
         data=dict(
             name="jdoe",
-            pword="HelloWorldzzzz2023!",
+            pword="HelloWorldzzzz2023",
             nick_name="John",
             last_name="",
             membership=2,
             email_address="jdoe@icloud.com",
         ),
     )
-    assert b"Invalid request" in post_res_1.data
+    assert (
+        b"Please provide valid username, first_name, password, email_ad"
+        in post_res_1.data
+    )
 
     post_res_2 = client.post(
         "/signup",
         data=dict(),
     )
-    assert b"Invalid request" in post_res_2.data
+    assert (
+        b"Please provide valid username, first_name, password, email_ad"
+        in post_res_2.data
+    )
 
 
 def test_login(client):

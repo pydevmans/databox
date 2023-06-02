@@ -38,6 +38,8 @@ class Table:
                 ("Name:str","Address:str")
             joiner: string -> "|" or "," etc...
         """
+        if not tablename or not columns:
+            raise HTTPException(f"Invalid tablename: `{tablename}`")
         self.tablename = tablename if "/" not in tablename else tablename.split("/")[-1]
         self.columns = columns
         self.last_pk = 1
@@ -125,7 +127,7 @@ class Paginator:
         self.table = table
         self.current_page = page
         self.items_on_page = items_on_page
-        self.total_page = ceil(self.table.last_pk / self.items_on_page)
+        self.total_page = ceil((self.table.last_pk - 1) / self.items_on_page)
 
     def _has_prev_page(self):
         if (self.current_page - 1) > 0:

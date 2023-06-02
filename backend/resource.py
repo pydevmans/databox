@@ -1,6 +1,5 @@
 import os
 import re
-import shutil
 from enum import Enum
 from backend import (
     upgrade_exception,
@@ -109,16 +108,36 @@ class UserProfile(Resource):
 class SignUp(Resource):
     def post(self):
         kwargs = request.form.to_dict()
+        for field in (
+            "username",
+            "password",
+            "first_name",
+            "email_address",
+            "membership",
+            "last_name",
+        ):
+            if not (
+                kwargs.get(field, None)
+                and re.fullmatch("[\w @.-]+", kwargs.get(field, ""))
+            ):
+                raise HTTPException(
+                    "Please provide valid username, first_name, password, "
+                    "email_address, membership, last_name."
+                    " Only Alphanumeric Characters and @, ., , - are allowed."
+                )
         try:
             kwargs["password"] = create_hash_password(kwargs["password"])
-            kwargs["membership"] = int(kwargs["membership"])
+            kwargs["membership"] = int(kwargs.get("membership", None))
             username = kwargs["username"]
         except KeyError:
             raise HTTPException("Invalid request.")
+        except (TypeError, ValueError):
+            raise HTTPException("Membersip value has to be 0,1 or 2.")
         users_table = AggregatableTable.access_table("users")
         if username in os.listdir("database/usernames"):
             raise HTTPException(
-                f"""Given username: `{username}` is already taken. Please try diffrent one."""
+                f"Given username: `{username}` is already taken. Please try"
+                " diffrent one."
             )
         try:
             users_table.insert(**kwargs)
@@ -175,15 +194,16 @@ class UserDatabases(Resource):
     @login_required
     @is_users_content
     def delete(self, username):
-        shutil.rmtree(f"database/usernames/{username}")
+        for file in os.listdir(f"database/usernames/{username}/"):
+            os.remove(f"database/usernames/{username}/" + file)
         return {"message": "Successfully removed All Database"}
 
     @login_required
     @is_users_content
     def post(self, username):
         if not (
-            re.fullmatch("[\w]*", request.form["title"])
-            and re.fullmatch("[\w:,()'\" ]*", request.form["fields"])
+            re.fullmatch("[\w]+", request.form["title"])
+            and re.fullmatch("[\w:,()'\" ]+", request.form["fields"])
         ):
             raise HTTPException(
                 "Make sure `title` is starting with letters and is "
@@ -191,7 +211,7 @@ class UserDatabases(Resource):
                 "`('field_1:type', 'field_2:type',...)` where `type`"
                 "is one of `(str, int, float, bool, none)`"
             )
-        title = request.form["title"].lower()
+        title = request.form["title"]
         fields = tuple(request.form["fields"].lower().split(","))
         table = ClientServiceType(current_user).get_table_klass()
         tablename = f"usernames/{username}/{title}"
@@ -223,6 +243,10 @@ class UserDatabase(Resource):
     @is_users_content
     def put(self, username, database):
         name = request.form["database"]
+        if not (name and re.fullmatch("[a-zA-Z0-9]+", name)):
+            return HTTPException(
+                f"Please provide valid database name. `{name}` is not valid."
+            )
         os.rename(
             f"database/usernames/{username}/{database}.txt",
             f"database/usernames/{username}/{name}.txt",
@@ -258,9 +282,11 @@ class InteracDatabase(Resource):
         table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
-            record = table.query(pk=pk)
+            record = table.query(pk=int(pk))
         except AttributeError:
             raise upgrade_exception()
+        except ValueError:
+            raise HTTPException(f"Value for pk has to be int. Not '{pk}'.")
         return record
 
     @login_required
@@ -269,7 +295,9 @@ class InteracDatabase(Resource):
         table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
-            table.delete(pk=pk)
+            table.delete(pk=int(pk))
         except AttributeError:
             raise upgrade_exception()
-        return {"message": f"Successfully removed {database} Database"}
+        except ValueError:
+            raise HTTPException(f"Value for pk has to be int. Not '{pk}'.")
+        return {"message": f"Successfully removed record from {database}"}

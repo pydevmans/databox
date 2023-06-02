@@ -23,6 +23,10 @@ invalid_query_string = {
 }
 
 
+def invalid_database(database):
+    return {"message": f"Provided database value: `{database}` is invalid."}
+
+
 def invalid_field_name(fields):
     return {"message": f"The field: `{fields}` are not valid."}
 
