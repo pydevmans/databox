@@ -3,7 +3,7 @@
 
 import requests
 
-TESTING = False
+TESTING = True
 
 if TESTING:
     url = "http://localhost:5000"
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     FIRST_NAME = "John"
     LAST_NAME = "Doe"
     MEMBERSHIP = 2  # 0 or 1 or 2
-    USERNAME = "j.doe"
+    USERNAME = "johndoe"
     PASSWORD = "HelloWorld!"
     EMAIL_ADDRESS = "j.doe@gmail.com"
     DATABASE_TITLE = "starwars"
