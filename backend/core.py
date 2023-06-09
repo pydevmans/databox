@@ -127,7 +127,8 @@ class Paginator:
         self.table = table
         self.current_page = page
         self.items_on_page = items_on_page
-        self.total_page = ceil((self.table.last_pk - 1) / self.items_on_page)
+        self.last = ceil((self.table.last_pk - 1) / self.items_on_page)
+        self.first = 1 if self.last > 1 else None
 
     def _has_prev_page(self):
         if (self.current_page - 1) > 0:
@@ -152,9 +153,10 @@ class Paginator:
         resp["data"] = []
         for item in itertools.islice(self.table._read(), start, end):
             resp["data"].append(item)
-        resp["next_page"] = self._has_next_page()
-        resp["prev_page"] = self._has_prev_page()
-        resp["total_page"] = self.total_page
+        resp["next"] = self._has_next_page()
+        resp["prev"] = self._has_prev_page()
+        resp["first"] = self.first
+        resp["last"] = self.last
         return resp
 
 

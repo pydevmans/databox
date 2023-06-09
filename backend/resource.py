@@ -6,6 +6,7 @@ from backend import (
     is_users_content,
     create_hash_password,
     Error400,
+    Error401,
     AggregatableTable,
     FormattedTable,
     Process_QS,
@@ -21,8 +22,9 @@ from backend import (
     fields_type,
     email_type,
     req_parse_insert_in_database,
+    prep_resp,
 )
-from flask import request, current_app, send_from_directory
+from flask import request, current_app, send_from_directory, session
 from flask_login import (
     login_required,
     login_user,
@@ -63,10 +65,11 @@ users_profile_fields = {
 
 
 class HomePage(Resource):
+    @prep_resp
     def get(self):
         return {
             "title": "Welcome to DataBox!!",
-            "application-features": [
+            "applicationfeatures": [
                 "Relational Database style `CRD` performant file based Database service",
                 "int, str, float field types, list and dict are work in process",
                 "3 types of Membership to access Service",
@@ -76,13 +79,13 @@ class HomePage(Resource):
                 "~90% of the test coverage with unittest and application testing",
                 "The 'user' database of this application is using this database service.",
             ],
-            "key-highlight": [
+            "keyhighlights": [
                 "~Constant memory utilisation regardless of size of the database",
                 "~Linear time Lookup on many fields of record regardless of size of the database",
                 "~Linear time lookup with Primary Key or Pagination regardless of size of the database",
                 "Efficient Aggregation with as many criteria upon any/many field(s) of database",
             ],
-            "tech-stacks": [
+            "techstacks": [
                 "Flask",
                 "Flask-Login",
                 "Flask-RESTful",
@@ -94,6 +97,7 @@ class HomePage(Resource):
 
 
 class Help(Resource):
+    @prep_resp
     def get(self):
         return {
             "To Sign Up User": "curl http://mb9.pythonanywhere.com/signup -d"
@@ -113,6 +117,7 @@ class Help(Resource):
 
 class HelpCenter(Resource):
     @login_required
+    @prep_resp
     def get(self):
         if isinstance(current_user, AnonymousUserMixin):
             raise LogInRequired
@@ -160,6 +165,7 @@ class HelpCenter(Resource):
 
 
 class Privileged(Resource):
+    @prep_resp
     def get(self):
         return {
             "free_membership": {
@@ -179,16 +185,22 @@ class Privileged(Resource):
 
 
 class RandomUser(Resource):
+    @prep_resp
     def get(self):
         return random_user_generator()
 
 
 class Test(Resource):
+    @prep_resp
     def get(self):
+        import pdb
+
+        pdb.set_trace()
         return {"secret": "This is a Secret!"}
 
 
 class Script(Resource):
+    @prep_resp
     def get(self):
         downloadables = os.path.join(
             current_app.root_path, current_app.config["DOWNLOADABLES_FOLDER"]
@@ -216,6 +228,7 @@ class User:
 class UserProfile(Resource):
     @login_required
     @is_users_content
+    @prep_resp
     def get(self, username):
         users_table = AggregatableTable.access_table("users")
         resp = dict()
@@ -226,6 +239,7 @@ class UserProfile(Resource):
 
 
 class SignUp(Resource):
+    @prep_resp
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument("first_name", type=str, required=True, location="form")
@@ -243,13 +257,12 @@ class SignUp(Resource):
         kwargs = parser.parse_args()
         kwargs["password"] = create_hash_password(kwargs["password"])
         users_table = AggregatableTable.access_table("users")
-        print("POST method")
         if kwargs["username"] in os.listdir("database/usernames"):
             raise UserAlreadyExist
         try:
             users_table.insert(**kwargs)
         except Exception:
-            return Error400
+            raise Error400
         os.mkdir(
             f"database/usernames/{kwargs['username']}",
         )
@@ -257,6 +270,7 @@ class SignUp(Resource):
 
 
 class Login(Resource):
+    @prep_resp
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument(
@@ -273,10 +287,11 @@ class Login(Resource):
             resp = login_user(user)
             if resp:
                 return {"message": "Login Successful!"}
-        return {"message": "Please check your Credentials!"}
+        raise Error401
 
 
 class Logout(Resource):
+    @prep_resp
     def get(self):
         if current_user.is_authenticated:
             logout_user()
@@ -288,22 +303,25 @@ class MembershipFeatures(Resource):
     "This class lists all the features that are set out to be provided among"
     "all 3 classes of membership type."
 
+    @prep_resp
     def get(self):
         return {
-            "free_feats": Table._features(),
-            "basic_feats": FormattedTable._features(),
-            "premium_feats": AggregatableTable._features(),
+            "freefeats": Table._features(),
+            "basicfeats": FormattedTable._features(),
+            "premiumfeats": AggregatableTable._features(),
         }
 
 
 class UserDatabases(Resource):
     @login_required
     @is_users_content
+    @prep_resp
     def get(self, username):
         return os.listdir(f"database/usernames/{username}")
 
     @login_required
     @is_users_content
+    @prep_resp
     def delete(self, username):
         for file in os.listdir(f"database/usernames/{username}/"):
             os.remove(f"database/usernames/{username}/" + file)
@@ -311,6 +329,7 @@ class UserDatabases(Resource):
 
     @login_required
     @is_users_content
+    @prep_resp
     def post(self, username):
         """
         `fields` has to be like `('field_1:type', 'field_2:type',...)`
@@ -338,6 +357,7 @@ class UserDatabases(Resource):
 class UserDatabase(Resource):
     @login_required
     @is_users_content
+    @prep_resp
     def get(self, username, database):
         table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
@@ -351,6 +371,7 @@ class UserDatabase(Resource):
 
     @login_required
     @is_users_content
+    @prep_resp
     def put(self, username, database):
         name = request.form["database"]
         if not (name and re.fullmatch("[a-zA-Z0-9]+", name)):
@@ -365,12 +386,14 @@ class UserDatabase(Resource):
 
     @login_required
     @is_users_content
+    @prep_resp
     def delete(self, username, database):
         os.remove(f"database/usernames/{username}/{database}.txt")
         return {"message": f"Successfully removed {database} Database"}
 
     @login_required
     @is_users_content
+    @prep_resp
     def post(self, username, database):
         table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
@@ -382,6 +405,7 @@ class UserDatabase(Resource):
 class InteracDatabase(Resource):
     @login_required
     @is_users_content
+    @prep_resp
     def get(self, username, database, pk):
         table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
@@ -395,6 +419,7 @@ class InteracDatabase(Resource):
 
     @login_required
     @is_users_content
+    @prep_resp
     def delete(self, username, database, pk):
         table = ClientServiceType(current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")

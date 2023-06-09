@@ -4,6 +4,7 @@ import hashlib
 from .gen_response import Error403, InvalidURL
 from abc import ABC, abstractmethod
 from functools import reduce
+from flask import make_response, current_app
 from flask_login import current_user
 from flask_restful import reqparse
 
@@ -477,3 +478,15 @@ def req_parse_insert_in_database(table):
             parser.add_argument(field, type=field_type, required=True, location="form")
     kwargs = parser.parse_args()
     return kwargs
+
+
+def prep_resp(func):
+    def wrapper(*args, **kargs):
+        rv = func(*args, **kargs)
+        resp = make_response(rv)
+        resp.headers["Access-Control-Allow-Origin"] = current_app.config.get(
+            "ACCESS_CONTROL_ALLOW_ORIGIN"
+        )
+        return resp
+
+    return wrapper

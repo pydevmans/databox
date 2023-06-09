@@ -27,13 +27,17 @@ errors = {
         "message": "The Field name provided is not valid",
         "status": 400,
     },
-    "Error403": {
-        "message": "Forbidden.",
-        "status": 403,
-    },
     "Error400": {
         "message": "Forbidden.",
         "status": 400,
+    },
+    "Error401": {
+        "message": "Access UnAuthorized.",
+        "status": 401,
+    },
+    "Error403": {
+        "message": "Forbidden.",
+        "status": 403,
     },
     "InvalidURL": {
         "message": "Forbidden.",

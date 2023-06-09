@@ -21,6 +21,7 @@ from .helpers import (
     fields_type,
     email_type,
     req_parse_insert_in_database,
+    prep_resp,
 )
 
 from .gen_response import (
@@ -33,8 +34,9 @@ from .gen_response import (
     InvalidFieldName,
     InvalidFieldValue,
     InvalidTableName,
-    Error403,
     Error400,
+    Error401,
+    Error403,
     InvalidURL,
     PkIsNotInt,
     LogInRequired,

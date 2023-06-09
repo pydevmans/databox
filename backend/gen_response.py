@@ -37,11 +37,15 @@ class InvalidTableName(HTTPException):
     pass
 
 
-class Error403(HTTPException):
+class Error400(HTTPException):
     pass
 
 
-class Error400(HTTPException):
+class Error401(HTTPException):
+    pass
+
+
+class Error403(HTTPException):
     pass
 
 
