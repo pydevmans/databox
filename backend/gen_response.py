@@ -65,6 +65,10 @@ class UserAlreadyExist(HTTPException):
     pass
 
 
+class RefreshLogInRequired(HTTPException):
+    pass
+
+
 class UserDoesNotExist(HTTPException):
     pass
 

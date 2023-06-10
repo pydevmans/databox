@@ -1,8 +1,7 @@
 from flask import Flask
 from flask_restful import Api
-from flask_login import LoginManager
+from config import errors
 from backend import (
-    User,
     UserProfile,
     HomePage,
     UserDatabase,
@@ -12,7 +11,6 @@ from backend import (
     MembershipFeatures,
     Login,
     Logout,
-    AggregatableTable,
     Help,
     HelpCenter,
     Privileged,
@@ -20,26 +18,60 @@ from backend import (
     Test,
     Script,
 )
-from werkzeug.exceptions import Unauthorized
-from config import errors
 
 app = Flask(__name__)
 app.config.from_object("defaultSettings")
 api = Api(app, catch_all_404s=True, errors=errors)
-login_manager = LoginManager()
-login_manager.init_app(app)
 
 
-@login_manager.user_loader
-def load_user(username):
+import jwt
+from datetime import datetime, timedelta
+from backend import (
+    AggregatableTable,
+    check_password,
+    LogInRequired,
+    RefreshLogInRequired,
+    UserDoesNotExist,
+)
+from flask import request, g
+
+
+def login(username, password, HOURS=4):
     table = AggregatableTable.access_table("users")
-    user = User(table.query(username=username)[0])
-    return user
+    user = table.query(username=username)
+    if check_password(password, user.password):
+        token = jwt.encode(
+            {
+                "username": user.username,
+                "expiry": datetime.utcnow() + timedelta(hours=HOURS),
+            },
+            app.config.get(["SECRET"]),
+            algorithm="HS256",
+        )
+        g.token = token
+        return user
+    else:
+        raise LogInRequired
 
 
-@login_manager.unauthorized_handler
-def unauthorized():
-    raise Unauthorized("Access unauthorized! Make sure to login.")
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("x-access-token")
+        if not token:
+            raise LogInRequired
+        payload = jwt.decode(token, "secret", algorithms=["HS256"])
+        table = AggregatableTable.access_table("users")
+        user = table.query(username=payload["username"])
+        still_valid = datetime.utcnow() - payload["expiry"]
+        if user and still_valid > 0:
+            g.current_user = user
+            return user
+        elif still_valid < 0:
+            raise RefreshLogInRequired
+        else:
+            raise UserDoesNotExist
+
+    return wrapper
 
 
 api.add_resource(HomePage, "/")

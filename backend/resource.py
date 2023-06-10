@@ -1,37 +1,31 @@
 import os
 import re
+import jwt
 from enum import Enum
-from backend import (
-    UpgradePlan,
+from .helpers import (
     is_users_content,
     create_hash_password,
-    Error400,
-    Error401,
-    AggregatableTable,
-    FormattedTable,
-    Process_QS,
-    Table,
-    PkIsNotInt,
-    UpgradePlan,
-    LogInRequired,
     random_user_generator,
-    InvalidFieldValue,
-    UserDoesNotExist,
-    UserAlreadyExist,
     username_type,
     fields_type,
     email_type,
     req_parse_insert_in_database,
     prep_resp,
+    check_password,
 )
-from flask import request, current_app, send_from_directory, session
-from flask_login import (
-    login_required,
-    login_user,
-    current_user,
-    logout_user,
-    AnonymousUserMixin,
+from .core import AggregatableTable, FormattedTable, Process_QS, Table
+from .gen_response import (
+    UpgradePlan,
+    Error400,
+    Error401,
+    PkIsNotInt,
+    LogInRequired,
+    UserDoesNotExist,
+    UserAlreadyExist,
+    RefreshLogInRequired,
 )
+from datetime import datetime
+from flask import request, current_app, send_from_directory, g
 from flask_restful import Resource, fields, reqparse
 from werkzeug.exceptions import HTTPException
 
@@ -40,6 +34,44 @@ class Membership(Enum):
     free = 0
     basic = 1
     premium = 2
+
+
+def login(username, password, HOURS=4):
+    table = AggregatableTable.access_table("users")
+    user = table.query(username=username)[0]
+    if password == user.password:
+        token = jwt.encode(
+            {
+                "username": user.username,
+                # "expiry": datetime.utcnow() + timedelta(hours=HOURS),
+            },
+            current_app.config.get("SECRET", "mysecretsarehere!@#@"),
+            algorithm="HS256",
+        )
+        g.token = token
+        return user
+    else:
+        raise LogInRequired
+
+
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("x-access-token")
+        if not token:
+            raise LogInRequired
+        payload = jwt.decode(token, "secret", algorithms=["HS256"])
+        table = AggregatableTable.access_table("users")
+        user = table.query(username=payload["username"])
+        still_valid = datetime.utcnow() - payload["expiry"]
+        if user and still_valid > 0:
+            g.current_user = user
+            return user
+        elif still_valid < 0:
+            raise RefreshLogInRequired
+        else:
+            raise UserDoesNotExist
+
+    return wrapper
 
 
 class ClientServiceType:
@@ -119,9 +151,9 @@ class HelpCenter(Resource):
     @login_required
     @prep_resp
     def get(self):
-        if isinstance(current_user, AnonymousUserMixin):
+        if not g.current_user:
             raise LogInRequired
-        username = current_user.username
+        username = g.current_user.username
         resp = {
             "To See the User profile": 'curl --cookie "session=<session_key>"'
             f" http://mb9.pythonanywhere.com/users/{username}/profile",
@@ -165,6 +197,7 @@ class HelpCenter(Resource):
 
 
 class Privileged(Resource):
+    @login_required
     @prep_resp
     def get(self):
         return {
@@ -191,11 +224,9 @@ class RandomUser(Resource):
 
 
 class Test(Resource):
+    @login_required
     @prep_resp
     def get(self):
-        import pdb
-
-        pdb.set_trace()
         return {"secret": "This is a Secret!"}
 
 
@@ -226,14 +257,12 @@ class User:
 
 
 class UserProfile(Resource):
-    @login_required
-    @is_users_content
     @prep_resp
     def get(self, username):
         users_table = AggregatableTable.access_table("users")
         resp = dict()
         resp["userdata"] = users_table.query(username=username)[0]
-        table = ClientServiceType(current_user).get_table_klass()
+        table = ClientServiceType(g.current_user).get_table_klass()
         resp["feature_for_user"] = table._features()
         return resp
 
@@ -283,18 +312,16 @@ class Login(Resource):
         if not user:
             raise UserDoesNotExist
         user = User(user[0])
-        if user.password == create_hash_password(kwargs["password"]):
-            resp = login_user(user)
-            if resp:
-                return {"message": "Login Successful!"}
+        if login(user.username, user.password):
+            return {"message": "Login Successful!"}
         raise Error401
 
 
 class Logout(Resource):
     @prep_resp
     def get(self):
-        if current_user.is_authenticated:
-            logout_user()
+        if g.current_user:
+            # logout()
             return {"message": "Logout Successful!"}
         return {"message": "Please check the URL!"}
 
@@ -313,22 +340,16 @@ class MembershipFeatures(Resource):
 
 
 class UserDatabases(Resource):
-    @login_required
-    @is_users_content
     @prep_resp
     def get(self, username):
         return os.listdir(f"database/usernames/{username}")
 
-    @login_required
-    @is_users_content
     @prep_resp
     def delete(self, username):
         for file in os.listdir(f"database/usernames/{username}/"):
             os.remove(f"database/usernames/{username}/" + file)
         return {"message": "Successfully removed All Database"}
 
-    @login_required
-    @is_users_content
     @prep_resp
     def post(self, username):
         """
@@ -345,9 +366,9 @@ class UserDatabases(Resource):
         )
         kwargs = parser.parse_args()
         parsed_fields = tuple(i.lower() for i in kwargs["fields"].split(","))
-        table = ClientServiceType(current_user).get_table_klass()
+        table = ClientServiceType(g.current_user).get_table_klass()
         tablename = f"usernames/{username}/{kwargs['title']}"
-        cx_databases = len(os.listdir(f"database/usernames/{current_user.username}"))
+        cx_databases = len(os.listdir(f"database/usernames/{g.current_user.username}"))
         if cx_databases >= table.limit_database:
             raise UpgradePlan
         table(tablename, parsed_fields)
@@ -355,11 +376,9 @@ class UserDatabases(Resource):
 
 
 class UserDatabase(Resource):
-    @login_required
-    @is_users_content
     @prep_resp
     def get(self, username, database):
-        table = ClientServiceType(current_user).get_table_klass()
+        table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         qs = request.query_string.decode()
         if qs:
@@ -369,8 +388,6 @@ class UserDatabase(Resource):
         except AttributeError:
             raise UpgradePlan
 
-    @login_required
-    @is_users_content
     @prep_resp
     def put(self, username, database):
         name = request.form["database"]
@@ -384,18 +401,14 @@ class UserDatabase(Resource):
         )
         return {"message": f"Successfully renamed Database to `{name}`."}
 
-    @login_required
-    @is_users_content
     @prep_resp
     def delete(self, username, database):
         os.remove(f"database/usernames/{username}/{database}.txt")
         return {"message": f"Successfully removed {database} Database"}
 
-    @login_required
-    @is_users_content
     @prep_resp
     def post(self, username, database):
-        table = ClientServiceType(current_user).get_table_klass()
+        table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         kwargs = req_parse_insert_in_database(table)
         table.insert(**kwargs)
@@ -403,11 +416,9 @@ class UserDatabase(Resource):
 
 
 class InteracDatabase(Resource):
-    @login_required
-    @is_users_content
     @prep_resp
     def get(self, username, database, pk):
-        table = ClientServiceType(current_user).get_table_klass()
+        table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
             record = table.query(pk=int(pk))
@@ -417,11 +428,9 @@ class InteracDatabase(Resource):
             raise PkIsNotInt
         return record
 
-    @login_required
-    @is_users_content
     @prep_resp
     def delete(self, username, database, pk):
-        table = ClientServiceType(current_user).get_table_klass()
+        table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
             table.delete(pk=int(pk))
