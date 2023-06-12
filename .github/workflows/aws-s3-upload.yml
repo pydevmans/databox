@@ -1,0 +1,31 @@
+name: Deploy to Amazon ECS
+
+on:
+  push:
+    branches: ["testing"]
+    paths:
+      - 'frontend/**'
+  pull_request:
+    branches: ["testing"]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  deploy:
+    name: Upload to Amazon S3
+    runs-on: ubuntu-latest
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Configure AWS credentials from Databox account
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ vars.GH_ACTION_ROLE }}
+        aws-region: us-east-1
+    - name: Copy files to the test website with the AWS CLI
+      run: |
+        aws s3 sync frontend/* ${{ vars.S3_BUCKET_ARN }}
