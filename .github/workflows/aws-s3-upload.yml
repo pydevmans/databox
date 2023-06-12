@@ -28,6 +28,7 @@ jobs:
       - name: Build tool for FrontEnd
         run: |
           cd frontend
+          npm install
           npm run build
           cd ..
       - name: Copy files to the test website with the AWS CLI
