@@ -3,6 +3,7 @@ name: Deploy to Amazon ECS
 on:
   push:
     branches: ["testing"]
+
   pull_request:
     branches: ["testing"]
     paths:
@@ -27,11 +28,8 @@ jobs:
       - name: Build tool for FrontEnd
         run: |
           cd frontend
-          npm install
           npm run build
           cd ..
       - name: Copy files to the test website with the AWS CLI
         run: |
-          aws s3 sync frontend/dist/index.html ${{ vars.S3_BUCKET_ARN }}
-          aws s3 sync frontend/dist/favicon.ico ${{ vars.S3_BUCKET_ARN }}
-          aws s3 sync frontend/dist/assets/* ${{ vars.S3_BUCKET_ARN }}
+          aws s3 sync frontend/dist ${{ vars.S3_BUCKET_ARN }}
