@@ -13,7 +13,6 @@ jobs:
   deploy:
     name: Upload to Amazon S3
     runs-on: ubuntu-latest
-    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
     permissions:
       id-token: write
       contents: read
