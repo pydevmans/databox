@@ -25,6 +25,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ vars.GH_ACTION_ROLE }}
+          aws-region: us-east-1
       - name: Build tool for FrontEnd
         run: |
           cd frontend
