@@ -3,8 +3,6 @@ name: Deploy to Amazon ECS
 on:
   push:
     branches: ["testing"]
-    paths:
-      - "frontend/**"
   pull_request:
     branches: ["testing"]
     paths:
