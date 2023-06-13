@@ -1,14 +1,14 @@
 let URL = "http://127.0.0.1:5000"
 
-export const get_home = await fetch(URL + "/", { method: "GET" }).then(resp => { return resp.json() })
+export const get_home = fetch(URL + "/", { method: "GET" }).then(resp => { return resp.json() })
 
-export const features = await fetch(URL + "/features", { method: "GET" }).then(resp => { return resp.json() })
+export const features = fetch(URL + "/features", { method: "GET" }).then(resp => { return resp.json() })
 
 export async function login(username, password) {
     let formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
-    await fetch(URL + "/login", { method: "POST", body: formData })
+    fetch(URL + "/login", { method: "POST", body: formData })
         .then(resp => { console.log("axios resp", resp); return resp; })
 }
 
