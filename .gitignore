@@ -1,12 +1,11 @@
 # Ignore
 database/**/*
 venv
-fe-databox/node_modules
+frontend/node_modules
 .coverage
 *.pyc
 __pycache__
 */__pycache__
-fe-databox/node_modules
 
 # Allow
 !database/users.txt
