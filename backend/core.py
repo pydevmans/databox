@@ -5,22 +5,9 @@ from math import ceil
 from .helpers import sw, generic_open, _in
 from .gen_response import UpgradePlan, InvalidQueryString, InvalidFieldName
 from collections import namedtuple
-from flask_login import current_user
 from functools import reduce
 from operator import lt, gt, eq, ge, le
 from werkzeug.exceptions import HTTPException
-
-
-class InvalidPropException(HTTPException):
-    pass
-
-
-class NotAValidFieldType(HTTPException):
-    pass
-
-
-class TypeDoesntConfirmDefination(HTTPException):
-    pass
 
 
 class Table:
@@ -103,6 +90,7 @@ class Table:
             )
             file.write(data)
         self.last_pk += 1
+        return kwargs
 
     def size_on_disk(self):
         return str(os.stat(self.filelocation).st_size) + " bytes"
@@ -137,16 +125,17 @@ class Paginator:
             return None
 
     def _has_next_page(self):
-        if (self.current_page + 1) <= self.total_page:
+        if (self.current_page + 1) <= self.last:
             return self.current_page + 1
         else:
             return None
 
     def serve(self):
-        if self.current_page <= 0 or self.current_page > self.total_page:
+        if self.current_page <= 0 or self.current_page > self.last:
             raise HTTPException(
-                f"Please make sure `page` is within `(1, {self.total_page})`."
+                f"Please make sure `page` is within `(1, {self.last})`."
             )
+
         start = (self.current_page - 1) * self.items_on_page
         end = self.current_page * self.items_on_page
         resp = dict()
@@ -301,6 +290,7 @@ class FormattedTable(Table):
     def delete(self, pk):
         if pk == 0:
             raise HTTPException(f"Can not delete pk:`{pk}`, since it is title record.")
+        record = self.query(pk=pk)
         with generic_open(self.filelocation, "r+") as file:
             itertools.islice(file.readline(), pk)
             start = file.tell()
@@ -309,6 +299,7 @@ class FormattedTable(Table):
             size = end - start - 1
             file.seek(start)
             file.write(" " * size)
+        return record
 
     def insert(self, **kwargs):
         """

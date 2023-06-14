@@ -4,7 +4,6 @@ from .core import (
     Paginator,
     FormattedTable,
     AggregatableTable,
-    TypeDoesntConfirmDefination,
     Process_QS,
 )
 

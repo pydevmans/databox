@@ -1,18 +1,14 @@
 import re
-import jwt
 import random
 import hashlib
 from .gen_response import (
     Error403,
     InvalidURL,
-    LogInRequired,
-    UserDoesNotExist,
-    RefreshLogInRequired,
 )
 
 from abc import ABC, abstractmethod
 from functools import reduce
-from flask import make_response, request, current_app, g
+from flask import make_response, current_app, g
 from flask_restful import reqparse
 
 CAPITAL_LETTERS = (65, 90)
@@ -494,8 +490,6 @@ def prep_resp(func):
         resp.headers["Access-Control-Allow-Origin"] = current_app.config.get(
             "ACCESS_CONTROL_ALLOW_ORIGIN"
         )
-        if getattr(g, "token", None):
-            resp.headers["x-access-token"] = g.token
         return resp
 
     return wrapper
