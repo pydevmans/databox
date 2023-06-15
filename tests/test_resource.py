@@ -77,7 +77,7 @@ def test_signup(tclient):
         assert data["last_name"] == resp["last_name"]
         assert data["membership"] == resp["membership"]
         assert data["email_address"] == resp["email_address"]
-        shutil.rmtree("database/usernames/jdoe")
+        shutil.rmtree("database/usernames/jasondoe")
     else:
         assert "message" in post_res.json
 
