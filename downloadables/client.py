@@ -2,7 +2,7 @@
 
 import requests
 
-TESTING = True  # Set False to test Prod Server
+TESTING = False  # Set False to test Prod Server
 
 if TESTING:
     url = "http://localhost:5000"

@@ -341,7 +341,7 @@ class Login(Resource):
                 current_app.config.get("SECRET", "mysecretsarehere!@#@"),
                 algorithm="HS256",
             )
-            return {"data": "Login Successful!", "token": token}
+            return {"data": "Login Successful!", "token": token.decode()}
         else:
             raise LogInRequired
 
