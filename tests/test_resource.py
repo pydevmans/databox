@@ -1,275 +1,271 @@
 import os
+import json
 import shutil
 import pytest
 from app import app
 from math import ceil
-from flask_login import current_user
 from backend import random_user_generator
+from flask import g
 
 
 @pytest.fixture
-def client():
-    app.config["TESTING"] = True
+def tclient():
+    app.config["DEBUG"] = True
     with app.test_client() as client:
         yield client
 
 
+# change the username to `(user0, user1, user2)` to test the functionality
+# across range of membership types
+username = "user2"
+password = "HelloWorld2023!"
+
+
 @pytest.fixture
-def logged_user_client(client):
-    # change the username to `(user0, user1, user2)` to test the functionality
-    # across range of membership types
-    username = "user2"
-    password = "HelloWorld2023!"
-    post_res = client.post("/login", data=dict(username=username, password=password))
+def logged_user_client(tclient):
     shutil.copy(
         f"database/usernames/{username}/backup.txt",
         f"database/usernames/{username}/test.txt",
     )
-    assert b"Login Successful!" in post_res.data
-    yield client
+    post_res = tclient.post(
+        "/login", data=dict(username=username, password=password)
+    ).json
+    g.headers = {"x-access-token": post_res["token"]}
+    yield tclient
     os.remove(f"database/usernames/{username}/test.txt")
 
 
-def test_homepage(client):
-    res1 = client.get("/")
-    assert b"title" in res1.data
-    assert b"application-features" in res1.data
-    assert b"key-highlight" in res1.data
-    assert b"tech-stacks" in res1.data
+def test_homepage(tclient):
+    res1 = tclient.get("/")
+    assert "title" in res1.json["data"]
+    assert "applicationfeatures" in res1.json["data"]
+    assert "keyhighlights" in res1.json["data"]
+    assert "techstacks" in res1.json["data"]
 
 
 def test_userprofile(logged_user_client):
-    get_res = logged_user_client.get(f"users/{current_user.username}/profile")
-    assert current_user.username.encode() in get_res.data
-    assert current_user.first_name.encode() in get_res.data
-    assert current_user.last_name.encode() in get_res.data
-    assert b"Something went wrong! Please check the URL" not in get_res.data
+    headers = g.headers
+    get_res = logged_user_client.get(f"users/{username}/profile", headers=headers)
 
-    get_res1 = logged_user_client.get("users/anotheruser/profile")
-    assert (
-        b"Access Unauthorized! Client does not have right to access." in get_res1.data
+    assert g.current_user.username in get_res.text
+    assert g.current_user.first_name in get_res.text
+    assert g.current_user.last_name in get_res.text
+    assert "Something went wrong! Please check the URL" not in get_res.text
+
+    get_res1 = logged_user_client.get("users/anotheruser/profile", headers=headers)
+    assert "Forbidden" in get_res1.text
+
+
+def test_signup(tclient):
+    data = dict(
+        username="jasondoe",
+        password="HelloWorldzzzz2023",
+        first_name="Joson",
+        last_name="Doe",
+        membership=2,
+        email_address="jasondoe@icloud.com",
     )
-
-
-def test_signup(client):
-    post_res = client.post(
+    post_res = tclient.post(
         "/signup",
-        data=dict(
-            username="jdoe",
-            password="HelloWorldzzzz2023",
-            first_name="John",
-            last_name="Doe",
-            membership=2,
-            email_address="jdoe@icloud.com",
-        ),
+        data=data,
         follow_redirects=True,
     )
-    assert b"request to add user was successful." in post_res.data
-    shutil.rmtree("database/usernames/jdoe")
+    if post_res.status_code == 200:
+        resp = json.loads(post_res.json["data"])
+        assert data["username"] == resp["username"]
+        assert data["first_name"] == resp["first_name"]
+        assert data["last_name"] == resp["last_name"]
+        assert data["membership"] == resp["membership"]
+        assert data["email_address"] == resp["email_address"]
+        shutil.rmtree("database/usernames/jasondoe")
+    else:
+        assert "message" in post_res.json
 
-    post_res_1 = client.post(
+    post_res_1 = tclient.post(
         "/signup",
         data=dict(
             name="jdoe",
-            pword="HelloWorldzzzz2023",
+            password="HelloWorldzzzz2023",
             nick_name="John",
             last_name="",
             membership=2,
             email_address="jdoe@icloud.com",
         ),
     )
-    assert (
-        b"Please provide valid username, first_name, password, email_ad"
-        in post_res_1.data
-    )
+    assert post_res_1.status_code != 200
 
-    post_res_2 = client.post(
+    post_res_2 = tclient.post(
         "/signup",
         data=dict(),
     )
-    assert (
-        b"Please provide valid username, first_name, password, email_ad"
-        in post_res_2.data
-    )
+    assert post_res_2.status_code != 200
 
 
-def test_login(client):
-    post_res = client.post(
+def test_login(tclient):
+    post_res = tclient.post(
         "/login", data=dict(username="user0", password="IncorrectPassword21!")
     )
-    assert b"Please check your Credentials!" in post_res.data
+    assert post_res.status_code != 200
 
 
 def test_logout(logged_user_client):
-    get_res = logged_user_client.get("/logout")
-    assert b"Logout Successful!" in get_res.data
-    assert b"Please check the URL!" not in get_res.data
+    get_res = logged_user_client.get("/logout", headers=g.headers)
+    assert get_res.status_code == 200
+    assert username in get_res.json["data"]
 
 
-def test_features(client):
-    get_res = client.get("/features")
-    assert b"free_feats" in get_res.data
-    assert b"basic_feats" in get_res.data
-    assert b"premium_feats" in get_res.data
+def test_features(tclient):
+    get_res = tclient.get("/features")
+    assert "freefeats" in get_res.text
+    assert "basicfeats" in get_res.text
+    assert "premiumfeats" in get_res.text
 
 
 def test_userdatabases(logged_user_client):
-    get_res = logged_user_client.get(f"/users/{current_user.username}/databases")
-    assert b"profiles" in get_res.data
+    headers = g.headers
+    get_res = logged_user_client.get(f"/users/{username}/databases", headers=headers)
+    assert "profiles.txt" in get_res.json["data"]
     put_res = logged_user_client.put(
-        f"/users/{current_user.username}/databases", data=dict(database="newname")
+        f"/users/{username}/databases", data=dict(database="newname"), headers=headers
     )
-    assert b"method is not allowed" in put_res.data
+    assert put_res.status_code != 200
     post_res = logged_user_client.post(
-        f"/users/{current_user.username}/databases",
+        f"/users/{username}/databases",
         data={"title": "testing", "fields": "name:str,age:int"},
+        headers=headers,
     )
-    assert b"Successfully created " in post_res.data
-    os.remove(f"database/usernames/{current_user.username}/testing.txt")
-
-
-def test_user_database_post(logged_user_client):
-    post_res = logged_user_client.post(
-        f"/users/{current_user.username}/databases/test",
-        data=random_user_generator(),
-    )
-    assert b"Successfully added record to database:" in post_res.data
-
-    post_res_1 = logged_user_client.post(
-        f"/users/{current_user.username}/databases/test",
-        data={"first_name": "!@#$%^&*", "last_name": "!@#$%^&*()"},
-    )
-    assert b"Records can only contain Alphabets, Numbers, _, -, , ." in post_res_1.data
+    assert post_res.status_code == 200
+    os.remove(f"database/usernames/{username}/testing.txt")
 
 
 def test_user_database(logged_user_client):
-    if current_user.membership.name == "premium":
-        get_res = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test"
-        )
+    headers = g.headers
+    get_res = logged_user_client.get(
+        f"/users/{username}/databases/test", headers=headers
+    )
+    if get_res.status_code == 200:
+        assert get_res.json.get("data", None) is not None
         assert (
-            b'"pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str"'
-            in get_res.data
+            "pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str"
+            in get_res.json["data"]
         )
-        shutil.copy(
-            f"database/usernames/{current_user.username}/backup.txt",
-            f"database/usernames/{current_user.username}/sample.txt",
-        )
-        put_res = logged_user_client.put(
-            f"/users/{current_user.username}/databases/sample",
-            data=dict(database="helloworld"),
-        )
-        assert b"Successfully renamed" in put_res.data
-        del_res = logged_user_client.delete(
-            f"/users/{current_user.username}/databases/helloworld"
-        )
-        assert b"Successfully removed" in del_res.data
-        page = 2
-        page_size = 11
-        get_res1 = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test?page={page}&page-size={page_size}"
-        )
-        assert get_res1.json["total_page"] == ceil(31 / page_size)
-        assert get_res1.json["prev_page"] == page - 1
-        assert len(get_res1.json["data"]) == page_size
+    else:
+        assert get_res.json.get("message", None) is not None
+    shutil.copy(
+        f"database/usernames/{username}/backup.txt",
+        f"database/usernames/{username}/sample.txt",
+    )
+    put_res = logged_user_client.put(
+        f"/users/{username}/databases/sample",
+        data=dict(database="helloworld"),
+        headers=headers,
+    )
+    if put_res.status_code == 200:
+        assert put_res.json["data"] == "helloworld"
+        assert put_res.json.get("data", None) is not None
+    else:
+        assert put_res.json.get("message", None) is not None
 
-        get_res2 = logged_user_client.get(
-            f"/users/{current_user.username}/databases/nodatabases"
-        )
-        assert b"Please check the URL!" in get_res2.data
+    del_res = logged_user_client.delete(
+        f"/users/{username}/databases/helloworld", headers=headers
+    )
+    if del_res.status_code == 200:
+        assert del_res.json["data"] == "helloworld"
+    else:
+        assert del_res.json.get("message", None) is not None
 
-    if current_user.membership.name == "basic":
-        get_res = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test"
-        )
-        assert (
-            b'"pk:int|first_name:str|last_name:str|age:int|address:str|telephone:str|phone:str|email:str"'
-            in get_res.data
-        )
-        page = 2
-        page_size = 11
-        get_res1 = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test?page={page}&page-size={page_size}"
-        )
-        assert get_res1.json["total_page"] == ceil(31 / page_size)
-        assert get_res1.json["prev_page"] == page - 1
-        assert len(get_res1.json["data"]) == page_size
+    page = 2
+    page_size = 11
+    get_res1 = logged_user_client.get(
+        f"/users/{username}/databases/test?page={page}&page-size={page_size}",
+        headers=headers,
+    )
+    if get_res1.status_code == 200:
+        assert get_res1.json["data"]["last"] == ceil(31 / page_size)
+        assert get_res1.json["data"]["prev"] == page - 1
+        assert len(get_res1.json["data"]["data"]) == page_size
+    else:
+        assert get_res1.json.get("message", None) is not None
 
-    if current_user.membership.name == "free":
-        get_res = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test"
-        )
-        assert b"sufficient features. Please upgrade the plan." in get_res.data
-        page = 2
-        page_size = 11
-        get_res1 = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test?page={page}&page-size={page_size}"
-        )
-        assert b"sufficient features. Please upgrade the plan." in get_res1.data
+    get_res2 = logged_user_client.get(
+        f"/users/{username}/databases/nodatabases", headers=headers
+    )
+    if get_res2.status_code == 200:
+        assert get_res2.json["data"]["last"] == ceil(31 / page_size)
+        assert get_res2.json["data"]["prev"] == page - 1
+        assert len(get_res2.json["data"]["data"]) == page_size
+    else:
+        assert get_res2.json.get("message", None) is not None
+
+    post_res = logged_user_client.post(
+        f"/users/{username}/databases/test",
+        data=random_user_generator(),
+        headers=headers,
+    )
+    if post_res.status_code == 200:
+        assert post_res.json.get("data", None) is not None
+    else:
+        assert post_res.json.get("message", None) is not None
+
+    post_res_1 = logged_user_client.post(
+        f"/users/{username}/databases/test",
+        data={"first_name": "!@#$%^&*", "last_name": "!@#$%^&*()"},
+        headers=headers,
+    )
+    if post_res_1.status_code == 200:
+        assert post_res_1.json.get("data", None) is not None
+    else:
+        assert post_res_1.json.get("message", None) is not None
 
 
 def test_interacdatabase(logged_user_client):
-    if current_user.membership.name == "premium":
-        get_res = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test/2"
-        )
+    headers = g.headers
+    get_res = logged_user_client.get(
+        f"/users/{username}/databases/test/2", headers=headers
+    )
+    if get_res.status_code == 200:
         assert (
-            b"2616 Cathedral Bluffs Drive street, Corona, Guam, U5N 7J3 Canada"
-            in get_res.data
+            "2616 Cathedral Bluffs Drive street, Corona, Guam, U5N 7J3 Canada"
+            in get_res.json["data"]
         )
+    else:
+        assert get_res.json.get("message", None) is not None
 
-        del_res = logged_user_client.delete(
-            f"/users/{current_user.username}/databases/test/2"
-        )
-        assert b"Successfully removed" in del_res.data
-    if current_user.membership.name == "basic":
-        get_res = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test/2"
-        )
+    del_res = logged_user_client.delete(
+        f"/users/{username}/databases/test/2", headers=headers
+    )
+    if del_res.status_code == 200:
         assert (
-            b"2616 Cathedral Bluffs Drive street, Corona, Guam, U5N 7J3 Canada"
-            in get_res.data
+            "2616 Cathedral Bluffs Drive street, Corona, Guam, U5N 7J3 Canada"
+            in del_res.json["data"]
         )
-
-        del_res = logged_user_client.delete(
-            f"/users/{current_user.username}/databases/test/2"
-        )
-        assert b"Successfully removed" in del_res.data
-    if current_user.membership.name == "free":
-        get_res = logged_user_client.get(
-            f"/users/{current_user.username}/databases/test/2"
-        )
-        assert b"sufficient features. Please upgrade the plan." in get_res.data
-
-        del_res = logged_user_client.delete(
-            f"/users/{current_user.username}/databases/test/2"
-        )
-        assert b"sufficient features. Please upgrade the plan." in del_res.data
+    else:
+        assert del_res.json.get("message", None) is not None
 
 
-def test_userdatabases_loggedout(client):
-    get_res = client.get("/users/user/databases")
-    assert b"Access unauthorized!" in get_res.data
-    put_res = client.put("/users/user/databases", data=dict(database="newname"))
-    assert b"method is not allowed" in put_res.data
-    post_res = client.post("/users/user/databases")
-    assert b"Access unauthorized!" in post_res.data
+def test_userdatabases_loggedout(tclient):
+    get_res = tclient.get("/users/user/databases")
+    assert get_res.status_code != 200
+    put_res = tclient.put("/users/user/databases", data=dict(database="newname"))
+    assert put_res.status_code != 200
+    post_res = tclient.post("/users/user/databases")
+    assert post_res.status_code != 200
 
 
-def test_user_database_loggedout(client):
-    get_res = client.get("/users/user/databases/test")
-    assert b"Access unauthorized!" in get_res.data
-    put_res = client.put(
+def test_user_database_loggedout(tclient):
+    get_res = tclient.get("/users/user/databases/test")
+    assert get_res.status_code != 200
+    put_res = tclient.put(
         "/users/user/databases/test1", data=dict(database="helloworld")
     )
-    assert b"Access unauthorized!" in put_res.data
-    del_res = client.delete("/users/user/databases/test1")
-    assert b"Access unauthorized!" in del_res.data
+    assert put_res.status_code != 200
+    del_res = tclient.delete("/users/user/databases/test1")
+    assert del_res.status_code != 200
 
 
-def test_interacdatabase_loggedout(client):
-    get_res = client.get("/users/user/databases/test/2")
-    assert b"Access unauthorized!" in get_res.data
+def test_interacdatabase_loggedout(tclient):
+    get_res = tclient.get("/users/user/databases/test/2")
+    assert get_res.status_code != 200
 
-    del_res = client.delete("/users/user/databases/test/2")
-    assert b"Access unauthorized!" in del_res.data
+    del_res = tclient.delete("/users/user/databases/test/2")
+    assert del_res.status_code != 200

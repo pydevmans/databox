@@ -1,14 +1,27 @@
-# Unlike using `curl` this py script allows user to make API calls
 # Plug in the values where mentioned to produce needed change over server.
 
 import requests
 
-TESTING = False
+TESTING = False  # Set False to test Prod Server
 
 if TESTING:
     url = "http://localhost:5000"
 else:
-    url = "http://mb9.pythonanywhere.com"
+    url = "https://mb9.pythonanywhere.com"
+
+
+def log_response(op):
+    def outer_wrapper(func):
+        def inner_wrapper(*args, **kwargs):
+            res = func(*args, **kwargs)
+            if res.status_code == 200:
+                print(f"[{op}]", res.json())
+            else:
+                print(f"[{op} ERROR]", res.json())
+
+        return inner_wrapper
+
+    return outer_wrapper
 
 
 class UserActivity:
@@ -29,99 +42,102 @@ class UserActivity:
         self.password = password
         self.email_address = email_address
         self.database_title = database_title
-        self.cookies = None
+        self.headers = dict()
 
+    @log_response(op="SIGN UP")
     def sign_up(self):
-        res = requests.post(url + "/signup", data=self.__dict__)
-        print("[SIGN UP]", res.text)
+        return requests.post(url + "/signup", data=self.__dict__)
 
     def login(self):
         res = requests.post(
             url + "/login", data={"username": self.username, "password": self.password}
         )
-        if "Login Successful!" in res.text:
-            self.cookies = {"session": res.cookies["session"]}
-        print("[LOG IN]", res.text)
+        r = res.json()
+        if res.status_code == 200:
+            self.headers.update({"x-access-token": r["token"]})
+            print("[LOG IN]", r["data"])
+        else:
+            print("[LOG IN ERROR]", r)
 
+    @log_response(op="LOGOUT")
     def logout(self):
-        res = requests.get(url + "/logout", cookies=self.cookies)
-        print("[LOG OUT]", res.text)
+        return requests.get(url + "/logout", headers=self.headers)
 
+    @log_response(op="CREATE DATABASE")
     def create_database(self, fields):
-        res = requests.post(
+        return requests.post(
             url + f"/users/{self.username}/databases",
             data={"title": self.database_title, "fields": fields},
-            cookies=self.cookies,
+            headers=self.headers,
         )
-        print("[CREATE Database]", res.text)
 
+    @log_response(op="LIST Database")
     def view_databases(self):
-        res = requests.get(
-            url + f"/users/{self.username}/databases", cookies=self.cookies
+        return requests.get(
+            url + f"/users/{self.username}/databases", headers=self.headers
         )
-        print("[LIST Databases]", res.text)
 
+    @log_response(op="DELETE ALL DATABASE(S)")
     def delete_databases(self):
-        res = requests.delete(
-            url + f"/users/{self.username}/databases", cookies=self.cookies
+        return requests.delete(
+            url + f"/users/{self.username}/databases", headers=self.headers
         )
-        print("[DELET All Databases]", res.text)
 
+    @log_response(op="VIEW RECORDS")
     def view_records(self, qs=""):
-        res = requests.get(
+        return requests.get(
             url + f"/users/{self.username}/databases/{self.database_title}" + qs,
-            cookies=self.cookies,
+            headers=self.headers,
         )
-        print("[GET Record(s)]", res.text)
 
     def rename_database(self, new_database_name):
         res = requests.put(
             url + f"/users/{self.username}/databases/{self.database_title}",
-            cookies=self.cookies,
             data={"database": new_database_name},
+            headers=self.headers,
         )
-        if "Successfully renamed Database" in res.text:
+        if res.status_code == 200:
             self.database_title = new_database_name
-        print("[RENAMED Database]", res.text)
+        print("[RENAMED Database]", res.json()["data"])
 
+    @log_response(op="DELETE DATABASE")
     def delete_database(self):
-        res = requests.delete(
+        return requests.delete(
             url + f"/users/{self.username}/databases/{self.database_title}",
-            cookies=self.cookies,
+            headers=self.headers,
         )
-        print("[DELETED Database]", res.text)
 
+    @log_response(op="ADD RECORD")
     def add_record(self, record):
-        res = requests.post(
+        return requests.post(
             url + f"/users/{self.username}/databases/{self.database_title}",
             data=record,
-            cookies=self.cookies,
+            headers=self.headers,
         )
-        print("[ADDED Record]", res.text)
 
+    @log_response(op="VIEW RECORD")
     def view_record(self, pk):
-        res = requests.get(
+        return requests.get(
             url + f"/users/{self.username}/databases/{self.database_title}/{pk}",
-            cookies=self.cookies,
+            headers=self.headers,
         )
-        print("[GET Record]", res.text)
 
+    @log_response(op="REMOVE RECORD")
     def remove_record(self, pk):
-        res = requests.delete(
+        return requests.delete(
             url + f"/users/{self.username}/databases/{self.database_title}/{pk}",
-            cookies=self.cookies,
+            headers=self.headers,
         )
-        print("[DELETED Record]", res.text)
 
+    @log_response(op="VIEW PROFILE")
     def view_profile(self):
-        res = requests.get(
-            url + f"/users/{self.username}/profile", cookies=self.cookies
+        return requests.get(
+            url + f"/users/{self.username}/profile", headers=self.headers
         )
-        print("[VIEW Profile]", res.text)
 
+    @log_response(op="VIEW FEATURES")
     def view_features(self):
-        res = requests.get(url + "/features")
-        print("[LIST Features]", res.text)
+        return requests.get(url + "/features", headers=self.headers)
 
 
 if __name__ == "__main__":
@@ -129,7 +145,7 @@ if __name__ == "__main__":
     FIRST_NAME = "John"
     LAST_NAME = "Doe"
     MEMBERSHIP = 2  # 0 or 1 or 2
-    USERNAME = "j.doe"
+    USERNAME = "johndoe"
     PASSWORD = "HelloWorld!"
     EMAIL_ADDRESS = "j.doe@gmail.com"
     DATABASE_TITLE = "starwars"
@@ -157,7 +173,7 @@ if __name__ == "__main__":
 
     for i in range(2):
         record = requests.get(url + "/random_users").json()
-        ua.add_record(record)
+        ua.add_record(record["data"])
 
     ua.view_records()
 

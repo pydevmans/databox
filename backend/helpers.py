@@ -1,10 +1,12 @@
+import re
 import random
 import hashlib
-from .gen_response import error_403
+from .gen_response import Error403, InvalidURL, UpgradePlan
+
 from abc import ABC, abstractmethod
 from functools import reduce
-from flask_login import current_user
-from werkzeug.exceptions import HTTPException
+from flask import make_response, current_app, g
+from flask_restful import reqparse
 
 CAPITAL_LETTERS = (65, 90)
 SMALL_CAP_LETTERS = (96, 122)
@@ -399,9 +401,9 @@ def deprecated(message=""):
 
 def is_users_content(func):
     def wrapper(*args, **kwargs):
-        if kwargs["username"] == current_user.username:
+        if kwargs["username"] == g.current_user.username:
             return func(*args, **kwargs)
-        return error_403
+        raise Error403
 
     return wrapper
 
@@ -421,7 +423,7 @@ def generic_open(filename, mode):
     try:
         return open(filename, mode=mode)
     except FileNotFoundError:
-        raise HTTPException("Please check the URL!")
+        raise InvalidURL
 
 
 def _in(value, pattern):
@@ -429,3 +431,69 @@ def _in(value, pattern):
         return True
     else:
         return False
+
+
+def username_type(username_str):
+    if re.fullmatch("[a-z0-9]{5,10}", username_str):
+        return username_str
+    else:
+        raise ValueError(
+            "Username has to start with Alphabet and may be aplhanumeric and 5-10 chars long."
+        )
+
+
+def fields_type(fields_str):
+    if re.fullmatch("([\w]{2,31}:(int|str|float),?)+", fields_str):
+        return fields_str
+    else:
+        raise ValueError(
+            "`fields` has to be in this form, `fields=name:type,name1:type1,name2:type2`"
+        )
+
+
+def email_type(email_str):
+    if re.fullmatch("[a-z0-9.]{5,32}@[a-z]{3,32}.[a-z0-9]{1,16}", email_str):
+        return email_str
+    else:
+        raise ValueError(
+            "Email is not valid. It has to be `(5-32 letters)@(3-32 letters).(1-16 letters)`"
+        )
+
+
+def str_type(str_values):
+    if re.fullmatch("[\w ,.@!':;\(\)\[\]]{0,256}", str_values):
+        return str_values
+    else:
+        raise ValueError(
+            "Str is not valid. It can have all aplhabets, _, ,,.,@,!,(,),[,],@;,:, ."
+        )
+
+
+def req_parse_insert_in_database(table):
+    parser = reqparse.RequestParser()
+    try:
+        for field, field_type in tuple(table.field_format.items())[1:]:
+            if field_type == str:
+                parser.add_argument(
+                    field, type=str_type, required=True, location="form"
+                )
+            else:
+                parser.add_argument(
+                    field, type=field_type, required=True, location="form"
+                )
+        kwargs = parser.parse_args()
+    except AttributeError:
+        raise UpgradePlan
+    return kwargs
+
+
+def prep_resp(func):
+    def wrapper(*args, **kargs):
+        rv = func(*args, **kargs)
+        resp = make_response(rv)
+        resp.headers["Access-Control-Allow-Origin"] = current_app.config.get(
+            "ACCESS_CONTROL_ALLOW_ORIGIN"
+        )
+        return resp
+
+    return wrapper
