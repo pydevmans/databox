@@ -1,6 +1,7 @@
 import os
 import re
 import jwt
+from copy import deepcopy
 from enum import Enum
 from .helpers import (
     is_users_content,
@@ -17,7 +18,6 @@ from .core import AggregatableTable, FormattedTable, Process_QS, Table
 from .gen_response import (
     UpgradePlan,
     Error400,
-    Error401,
     PkIsNotInt,
     LogInRequired,
     UserDoesNotExist,
@@ -25,11 +25,12 @@ from .gen_response import (
     RefreshLogInRequired,
     InvalidURL,
     InvalidFieldValue,
+    NoRecordFound,
 )
 from datetime import datetime, timedelta
 from flask import request, current_app, send_from_directory, g
 from flask_restful import Resource, fields, reqparse
-from werkzeug.exceptions import HTTPException
+from json import JSONEncoder
 
 
 class Membership(Enum):
@@ -241,12 +242,19 @@ class User:
         self.password = user.password
         self.membership = Membership(int(user.membership))
 
-        self.is_authenticated = True
-        self.is_active = True
-        self.is_anonymous = False
-
     def get_id(self):
         return self.username
+
+
+class UserEncoder(JSONEncoder):
+    def default(self, o):
+        obj = deepcopy(o)
+        mem_dict = obj.membership.__dict__
+        del mem_dict["__objclass__"]
+        obj_dict = obj.__dict__
+        obj_dict["membership"] = mem_dict
+        del obj_dict["password"]
+        return obj_dict
 
 
 class UserProfile(Resource):
@@ -290,7 +298,7 @@ class SignUp(Resource):
         os.mkdir(
             f"database/usernames/{kwargs['username']}",
         )
-        return {"data": user}
+        return {"data": UserEncoder().encode(user)}
 
 
 class Login(Resource):
@@ -344,8 +352,9 @@ class Logout(Resource):
     @prep_resp
     def get(self):
         if g.current_user:
+            user = g.current_user
             del g.current_user
-            return {"data": "Logout Successful!"}
+            return {"data": UserEncoder().encode(user)}
         raise InvalidURL
 
 
@@ -463,11 +472,13 @@ class InteracDatabase(Resource):
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
-            record = table.query(pk=int(pk))
+            record = table.query(pk=int(pk))[0]
         except AttributeError:
             raise UpgradePlan
         except ValueError:
             raise PkIsNotInt
+        except IndexError:
+            raise NoRecordFound
         return {"data": record}
 
     @login_required
@@ -477,7 +488,7 @@ class InteracDatabase(Resource):
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
-            record = table.delete(pk=int(pk))
+            record = table.delete(pk=int(pk))[0]
         except AttributeError:
             raise UpgradePlan
         except ValueError:

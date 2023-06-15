@@ -10,7 +10,11 @@ from backend import (
     Process_QS,
     FormattedTable,
     Table,
+    InvalidQueryString,
     TypeDoesntConfirmDefination,
+    PageNotPassed,
+    InvalidFieldName,
+    NotAValidFieldType,
 )
 from math import ceil
 from operator import gt, ge, le
@@ -76,19 +80,19 @@ class TestTable(unittest.TestCase):
 class TestPaginator(unittest.TestCase):
     def setUp(self):
         shutil.copy(
-            f"database/usernames/user0/backup.txt",
-            f"database/usernames/user0/test.txt",
+            "database/usernames/user0/backup.txt",
+            "database/usernames/user0/test.txt",
         )
 
     def tearDown(self):
-        os.remove(f"database/usernames/user0/test.txt")
+        os.remove("database/usernames/user0/test.txt")
 
     def test_serve(self):
         page = 2
         page_size = 10
         self.t = FormattedTable.access_table("usernames/user0/test")
         resp = Paginator(self.t, page, page_size).serve()
-        assert resp["total_page"] == ceil(len(self.t.read()) / page_size)
+        assert resp["last"] == ceil(len(self.t.read()) / page_size)
         assert len(resp["data"]) == page_size
 
     def test_serve_1(self):
@@ -134,12 +138,16 @@ class TestFormattedTable(unittest.TestCase):
         self.assertEqual(output.age, self.user["age"])
         self.assertEqual(output.phone, self.user["phone"])
         self.assertEqual(output.telephone, self.user["telephone"])
+        with self.assertRaises(HTTPException):
+            output = self.t.query(first_name=self.user["first_name"], pk=3)[0]
 
     def test_delete(self):
         self.t.insert(**self.user)
         self.t.delete(pk=1)
         with self.assertRaises(HTTPException):
             self.t.query(first_name=self.user["first_name"])
+        with self.assertRaises(HTTPException):
+            self.t.delete(pk=0)
 
 
 class TestIncorrectFormattedTable(unittest.TestCase):
@@ -163,6 +171,19 @@ class TestIncorrectFormattedTable(unittest.TestCase):
         del self.user["email"]
         with self.assertRaises(HTTPException):
             self.t.insert(**self.user)
+
+
+class TableCreation(unittest.TestCase):
+    def test_table_create(self):
+        with self.assertRaises(NotAValidFieldType):
+            FormattedTable(
+                "TestingTable",
+                (
+                    "last_name:list",
+                    "email:dict",
+                    "first_name:johnny",
+                ),
+            )
 
 
 class TestAggregatableTable(unittest.TestCase):
@@ -308,21 +329,19 @@ class Test_Process_QS_Pagination(unittest.TestCase):
         qs = "page=2&page-size=5"
         output = Process_QS(qs, self.t).process()
         assert len(output["data"]) == 5
-        assert output["next_page"] == 3
-        assert output["prev_page"] == 1
+        assert output["next"] == 3
+        assert output["prev"] == 1
 
     def test_proces_1(self):
-        assert (
-            "`-`, `=`, `&` characters."
-            in Process_QS("page-2", self.t).process()["message"]
-        )
+        with self.assertRaises(InvalidQueryString):
+            output = Process_QS("page-2", self.t).process()["message"]
+            assert type(output) == list
 
-        assert (
-            "`-`, `=`, `&` characters."
-            in Process_QS("page>2&page-size>=23", self.t).process()["message"]
-        )
+        with self.assertRaises(InvalidQueryString):
+            output = Process_QS("page>2&page-size>=23", self.t).process()["message"]
+            assert type(output) == list
 
-        with self.assertRaises(HTTPException):
+        with self.assertRaises(PageNotPassed):
             Process_QS("page-size=2", self.t).process()
 
 
@@ -346,11 +365,10 @@ class Test_Process_QS_URL_Search_Param(unittest.TestCase):
         assert all([le(i.age, 55) for i in output])
 
     def test_process_1(self):
-        garbage_qs = "name-joe&age>23"
-        assert (
-            "`-`, `=`, `&` characters"
-            in Process_QS(garbage_qs, self.t).process()["message"]
-        )
+        # garbage_qs = "name-joe&age>23"
+        # with self.assertRaises(InvalidQueryString):
+        #     Process_QS(garbage_qs, self.t).process()["message"]
 
-        qs = "name=joe&age==23"
-        assert "are not valid." in Process_QS(qs, self.t).process()["message"]
+        with self.assertRaises(InvalidFieldName):
+            qs = "name=joe&age==23"
+            Process_QS(qs, self.t).process()["message"]

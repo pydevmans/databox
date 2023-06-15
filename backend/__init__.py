@@ -44,6 +44,8 @@ from .gen_response import (
     UserDoesNotExist,
     InvalidCredentials,
     RefreshLogInRequired,
+    NoRecordFound,
+    PageNotPassed,
 )
 
 from .resource import (

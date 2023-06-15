@@ -1,10 +1,7 @@
 import re
 import random
 import hashlib
-from .gen_response import (
-    Error403,
-    InvalidURL,
-)
+from .gen_response import Error403, InvalidURL, UpgradePlan
 
 from abc import ABC, abstractmethod
 from functools import reduce
@@ -474,12 +471,19 @@ def str_type(str_values):
 
 def req_parse_insert_in_database(table):
     parser = reqparse.RequestParser()
-    for field, field_type in tuple(table.field_format.items())[1:]:
-        if field_type == str:
-            parser.add_argument(field, type=str_type, required=True, location="form")
-        else:
-            parser.add_argument(field, type=field_type, required=True, location="form")
-    kwargs = parser.parse_args()
+    try:
+        for field, field_type in tuple(table.field_format.items())[1:]:
+            if field_type == str:
+                parser.add_argument(
+                    field, type=str_type, required=True, location="form"
+                )
+            else:
+                parser.add_argument(
+                    field, type=field_type, required=True, location="form"
+                )
+        kwargs = parser.parse_args()
+    except AttributeError:
+        raise UpgradePlan
     return kwargs
 
 

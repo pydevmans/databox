@@ -75,3 +75,11 @@ class UserDoesNotExist(HTTPException):
 
 class InvalidCredentials(HTTPException):
     pass
+
+
+class NoRecordFound(HTTPException):
+    pass
+
+
+class PageNotPassed(HTTPException):
+    pass
