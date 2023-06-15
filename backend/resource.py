@@ -1,6 +1,7 @@
 import os
 import re
 import jwt
+from copy import deepcopy
 from enum import Enum
 from .helpers import (
     is_users_content,
@@ -17,17 +18,19 @@ from .core import AggregatableTable, FormattedTable, Process_QS, Table
 from .gen_response import (
     UpgradePlan,
     Error400,
-    Error401,
     PkIsNotInt,
     LogInRequired,
     UserDoesNotExist,
     UserAlreadyExist,
     RefreshLogInRequired,
+    InvalidURL,
+    InvalidFieldValue,
+    NoRecordFound,
 )
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import request, current_app, send_from_directory, g
 from flask_restful import Resource, fields, reqparse
-from werkzeug.exceptions import HTTPException
+from json import JSONEncoder
 
 
 class Membership(Enum):
@@ -36,40 +39,29 @@ class Membership(Enum):
     premium = 2
 
 
-def login(username, password, HOURS=4):
-    table = AggregatableTable.access_table("users")
-    user = table.query(username=username)[0]
-    if password == user.password:
-        token = jwt.encode(
-            {
-                "username": user.username,
-                # "expiry": datetime.utcnow() + timedelta(hours=HOURS),
-            },
-            current_app.config.get("SECRET", "mysecretsarehere!@#@"),
-            algorithm="HS256",
-        )
-        g.token = token
-        return user
-    else:
-        raise LogInRequired
-
-
 def login_required(func):
     def wrapper(*args, **kwargs):
         token = request.headers.get("x-access-token")
         if not token:
             raise LogInRequired
-        payload = jwt.decode(token, "secret", algorithms=["HS256"])
+        payload = jwt.decode(
+            token,
+            current_app.config.get("SECRET", "mysecretsarehere!@#@"),
+            algorithms=["HS256"],
+        )
         table = AggregatableTable.access_table("users")
-        user = table.query(username=payload["username"])
-        still_valid = datetime.utcnow() - payload["expiry"]
-        if user and still_valid > 0:
-            g.current_user = user
-            return user
+        user = table.query(username=payload["username"])[0]
+        still_valid = (
+            datetime.strptime(payload["expiry"], "%Y-%m-%d %H:%M:%f")
+            - datetime.utcnow()
+        )
+        if user and still_valid.total_seconds() > 0:
+            g.current_user = User(user)
         elif still_valid < 0:
             raise RefreshLogInRequired
         else:
             raise UserDoesNotExist
+        return func(*args, **kwargs)
 
     return wrapper
 
@@ -99,7 +91,7 @@ users_profile_fields = {
 class HomePage(Resource):
     @prep_resp
     def get(self):
-        return {
+        resp_data = {
             "title": "Welcome to DataBox!!",
             "applicationfeatures": [
                 "Relational Database style `CRD` performant file based Database service",
@@ -126,12 +118,13 @@ class HomePage(Resource):
             "For General help": "visit http://mb9.pythonanywhere.com/help",
             "For Logged in User based help": "visit http://mb9.pythonanywhere.com/helpcenter",
         }
+        return {"data": resp_data}
 
 
 class Help(Resource):
     @prep_resp
     def get(self):
-        return {
+        resp_data = {
             "To Sign Up User": "curl http://mb9.pythonanywhere.com/signup -d"
             ' "first_name=<first_name>" -d "last_name=<last_name>" -d'
             ' "membership=<0|1|2>" -d "username=<username>" -d'
@@ -145,6 +138,7 @@ class Help(Resource):
             "To make all GET requests in browser type this command to console (<crypt_signed_session_key> can be found from response of `/login`)": "document.cookie = 'session=<crypt_signed_session_key>' # till `;`",
             "Download Py Script Test This App Functionality": "http://mb9.pythonanywhere.com/script",
         }
+        return {"data": resp_data}
 
 
 class HelpCenter(Resource):
@@ -193,14 +187,13 @@ class HelpCenter(Resource):
             "To Delete the record by primary key for specific Database": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
             f"anywhere.com/users/{username}/databases/<database>/<pk_of_record>",
         }
-        return resp
+        return {"data": resp}
 
 
 class Privileged(Resource):
-    @login_required
     @prep_resp
     def get(self):
-        return {
+        resp_data = {
             "free_membership": {
                 "username": "user0",
                 "password": "HelloWorld2023!",
@@ -215,19 +208,20 @@ class Privileged(Resource):
             },
             "Download Py Script Test This App Functionality": "http://mb9.pythonanywhere.com/script",
         }
+        return {"data": resp_data}
 
 
 class RandomUser(Resource):
     @prep_resp
     def get(self):
-        return random_user_generator()
+        return {"data": random_user_generator()}
 
 
 class Test(Resource):
     @login_required
     @prep_resp
     def get(self):
-        return {"secret": "This is a Secret!"}
+        return {"data": {"secret": "This is a Secret!"}}
 
 
 class Script(Resource):
@@ -248,15 +242,24 @@ class User:
         self.password = user.password
         self.membership = Membership(int(user.membership))
 
-        self.is_authenticated = True
-        self.is_active = True
-        self.is_anonymous = False
-
     def get_id(self):
         return self.username
 
 
+class UserEncoder(JSONEncoder):
+    def default(self, o):
+        obj = deepcopy(o)
+        mem_dict = obj.membership.__dict__
+        del mem_dict["__objclass__"]
+        obj_dict = obj.__dict__
+        obj_dict["membership"] = mem_dict
+        del obj_dict["password"]
+        return obj_dict
+
+
 class UserProfile(Resource):
+    @login_required
+    @is_users_content
     @prep_resp
     def get(self, username):
         users_table = AggregatableTable.access_table("users")
@@ -264,7 +267,7 @@ class UserProfile(Resource):
         resp["userdata"] = users_table.query(username=username)[0]
         table = ClientServiceType(g.current_user).get_table_klass()
         resp["feature_for_user"] = table._features()
-        return resp
+        return {"data": resp}
 
 
 class SignUp(Resource):
@@ -289,18 +292,30 @@ class SignUp(Resource):
         if kwargs["username"] in os.listdir("database/usernames"):
             raise UserAlreadyExist
         try:
-            users_table.insert(**kwargs)
+            user = users_table.insert(**kwargs)
         except Exception:
             raise Error400
         os.mkdir(
             f"database/usernames/{kwargs['username']}",
         )
-        return {"message": "request to add user was successful."}
+        return {"data": UserEncoder().encode(user)}
 
 
 class Login(Resource):
     @prep_resp
     def post(self):
+        """
+        parses form field of request with `username` and `password` and checks
+        password. if matched, returns `message` along with `token`. else raises
+        exception.
+
+        Raises:
+            UserDoesNotExist: _description_
+            LogInRequired: _description_
+
+        Returns:
+            _type_: dict()
+        """
         parser = reqparse.RequestParser()
         parser.add_argument(
             "username", type=username_type, required=True, location="form"
@@ -312,18 +327,35 @@ class Login(Resource):
         if not user:
             raise UserDoesNotExist
         user = User(user[0])
-        if login(user.username, user.password):
-            return {"message": "Login Successful!"}
-        raise Error401
+        if check_password(kwargs.get("password"), user.password):
+            token = jwt.encode(
+                {
+                    "username": user.username,
+                    "expiry": datetime.strftime(
+                        datetime.utcnow()
+                        + timedelta(
+                            hours=current_app.config.get("COOKIE_TIME_VALIDITY_HOURS")
+                        ),
+                        "%Y-%m-%d %H:%M:%S",
+                    ),
+                },
+                current_app.config.get("SECRET", "mysecretsarehere!@#@"),
+                algorithm="HS256",
+            )
+            return {"data": "Login Successful!", "token": token}
+        else:
+            raise LogInRequired
 
 
 class Logout(Resource):
+    @login_required
     @prep_resp
     def get(self):
         if g.current_user:
-            # logout()
-            return {"message": "Logout Successful!"}
-        return {"message": "Please check the URL!"}
+            user = g.current_user
+            del g.current_user
+            return {"data": UserEncoder().encode(user)}
+        raise InvalidURL
 
 
 class MembershipFeatures(Resource):
@@ -333,23 +365,32 @@ class MembershipFeatures(Resource):
     @prep_resp
     def get(self):
         return {
-            "freefeats": Table._features(),
-            "basicfeats": FormattedTable._features(),
-            "premiumfeats": AggregatableTable._features(),
+            "data": {
+                "freefeats": Table._features(),
+                "basicfeats": FormattedTable._features(),
+                "premiumfeats": AggregatableTable._features(),
+            }
         }
 
 
 class UserDatabases(Resource):
+    @login_required
+    @is_users_content
     @prep_resp
     def get(self, username):
-        return os.listdir(f"database/usernames/{username}")
+        return {"data": os.listdir(f"database/usernames/{username}")}
 
+    @login_required
+    @is_users_content
     @prep_resp
     def delete(self, username):
-        for file in os.listdir(f"database/usernames/{username}/"):
+        all_files = os.listdir(f"database/usernames/{username}/")
+        for file in all_files:
             os.remove(f"database/usernames/{username}/" + file)
-        return {"message": "Successfully removed All Database"}
+        return {"data": all_files}
 
+    @login_required
+    @is_users_content
     @prep_resp
     def post(self, username):
         """
@@ -372,70 +413,84 @@ class UserDatabases(Resource):
         if cx_databases >= table.limit_database:
             raise UpgradePlan
         table(tablename, parsed_fields)
-        return {"message": f"Successfully created database:`{kwargs['title']}`."}
+        return {"data": kwargs["title"]}
 
 
 class UserDatabase(Resource):
+    @login_required
+    @is_users_content
     @prep_resp
     def get(self, username, database):
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         qs = request.query_string.decode()
         if qs:
-            return Process_QS(qs, table).process()
+            return {"data": Process_QS(qs, table).process()}
         try:
-            return table.get_records()
+            return {"data": table.get_records()}
         except AttributeError:
             raise UpgradePlan
 
+    @login_required
+    @is_users_content
     @prep_resp
     def put(self, username, database):
         name = request.form["database"]
         if not (name and re.fullmatch("[a-zA-Z0-9]+", name)):
-            return HTTPException(
+            raise InvalidFieldValue(
                 f"Please provide valid database name. `{name}` is not valid."
             )
         os.rename(
             f"database/usernames/{username}/{database}.txt",
             f"database/usernames/{username}/{name}.txt",
         )
-        return {"message": f"Successfully renamed Database to `{name}`."}
+        return {"data": name}
 
+    @login_required
+    @is_users_content
     @prep_resp
     def delete(self, username, database):
         os.remove(f"database/usernames/{username}/{database}.txt")
-        return {"message": f"Successfully removed {database} Database"}
+        return {"data": database}
 
+    @login_required
+    @is_users_content
     @prep_resp
     def post(self, username, database):
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         kwargs = req_parse_insert_in_database(table)
         table.insert(**kwargs)
-        return {"message": f"Successfully added record to database:`{database}`."}
+        return {"data": kwargs}
 
 
 class InteracDatabase(Resource):
+    @login_required
+    @is_users_content
     @prep_resp
     def get(self, username, database, pk):
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
-            record = table.query(pk=int(pk))
+            record = table.query(pk=int(pk))[0]
         except AttributeError:
             raise UpgradePlan
         except ValueError:
             raise PkIsNotInt
-        return record
+        except IndexError:
+            raise NoRecordFound
+        return {"data": record}
 
+    @login_required
+    @is_users_content
     @prep_resp
     def delete(self, username, database, pk):
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
-            table.delete(pk=int(pk))
+            record = table.delete(pk=int(pk))[0]
         except AttributeError:
             raise UpgradePlan
         except ValueError:
             raise PkIsNotInt
-        return {"message": f"Successfully removed record from {database}"}
+        return {"data": record}

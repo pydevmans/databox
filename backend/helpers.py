@@ -1,18 +1,11 @@
 import re
-import jwt
 import random
 import hashlib
-from .gen_response import (
-    Error403,
-    InvalidURL,
-    LogInRequired,
-    UserDoesNotExist,
-    RefreshLogInRequired,
-)
+from .gen_response import Error403, InvalidURL, UpgradePlan
 
 from abc import ABC, abstractmethod
 from functools import reduce
-from flask import make_response, request, current_app, g
+from flask import make_response, current_app, g
 from flask_restful import reqparse
 
 CAPITAL_LETTERS = (65, 90)
@@ -478,12 +471,19 @@ def str_type(str_values):
 
 def req_parse_insert_in_database(table):
     parser = reqparse.RequestParser()
-    for field, field_type in tuple(table.field_format.items())[1:]:
-        if field_type == str:
-            parser.add_argument(field, type=str_type, required=True, location="form")
-        else:
-            parser.add_argument(field, type=field_type, required=True, location="form")
-    kwargs = parser.parse_args()
+    try:
+        for field, field_type in tuple(table.field_format.items())[1:]:
+            if field_type == str:
+                parser.add_argument(
+                    field, type=str_type, required=True, location="form"
+                )
+            else:
+                parser.add_argument(
+                    field, type=field_type, required=True, location="form"
+                )
+        kwargs = parser.parse_args()
+    except AttributeError:
+        raise UpgradePlan
     return kwargs
 
 
@@ -494,8 +494,6 @@ def prep_resp(func):
         resp.headers["Access-Control-Allow-Origin"] = current_app.config.get(
             "ACCESS_CONTROL_ALLOW_ORIGIN"
         )
-        if getattr(g, "token", None):
-            resp.headers["x-access-token"] = g.token
         return resp
 
     return wrapper

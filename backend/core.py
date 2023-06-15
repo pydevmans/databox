@@ -3,24 +3,18 @@ import re
 import itertools
 from math import ceil
 from .helpers import sw, generic_open, _in
-from .gen_response import UpgradePlan, InvalidQueryString, InvalidFieldName
+from .gen_response import (
+    UpgradePlan,
+    InvalidQueryString,
+    InvalidFieldName,
+    PageNotPassed,
+    NotAValidFieldType,
+    TypeDoesntConfirmDefination,
+)
 from collections import namedtuple
-from flask_login import current_user
 from functools import reduce
 from operator import lt, gt, eq, ge, le
 from werkzeug.exceptions import HTTPException
-
-
-class InvalidPropException(HTTPException):
-    pass
-
-
-class NotAValidFieldType(HTTPException):
-    pass
-
-
-class TypeDoesntConfirmDefination(HTTPException):
-    pass
 
 
 class Table:
@@ -103,9 +97,7 @@ class Table:
             )
             file.write(data)
         self.last_pk += 1
-
-    def size_on_disk(self):
-        return str(os.stat(self.filelocation).st_size) + " bytes"
+        return kwargs
 
     @classmethod
     def access_table(cls, tablename, columns=tuple(), joiner="|"):
@@ -137,16 +129,17 @@ class Paginator:
             return None
 
     def _has_next_page(self):
-        if (self.current_page + 1) <= self.total_page:
+        if (self.current_page + 1) <= self.last:
             return self.current_page + 1
         else:
             return None
 
     def serve(self):
-        if self.current_page <= 0 or self.current_page > self.total_page:
+        if self.current_page <= 0 or self.current_page > self.last:
             raise HTTPException(
-                f"Please make sure `page` is within `(1, {self.total_page})`."
+                f"Please make sure `page` is within `(1, {self.last})`."
             )
+
         start = (self.current_page - 1) * self.items_on_page
         end = self.current_page * self.items_on_page
         resp = dict()
@@ -216,7 +209,9 @@ class FormattedTable(Table):
             except KeyError:
                 raise HTTPException(f"Invalid request. Check fields: `{fields}`.")
         if _:
-            raise HTTPException(f"Invalid request. Field `{_}` has invalid value type.")
+            raise TypeDoesntConfirmDefination(
+                f"Invalid request. Field `{_}` has invalid value type."
+            )
 
     def _type_compliable(self, **kwargs):
         for fields in tuple(self.field_format.keys())[1:]:
@@ -301,6 +296,7 @@ class FormattedTable(Table):
     def delete(self, pk):
         if pk == 0:
             raise HTTPException(f"Can not delete pk:`{pk}`, since it is title record.")
+        record = self.query(pk=pk)
         with generic_open(self.filelocation, "r+") as file:
             itertools.islice(file.readline(), pk)
             start = file.tell()
@@ -309,6 +305,7 @@ class FormattedTable(Table):
             size = end - start - 1
             file.seek(start)
             file.write(" " * size)
+        return record
 
     def insert(self, **kwargs):
         """
@@ -316,7 +313,7 @@ class FormattedTable(Table):
         before inserting record into
         """
         self._type_compliable(**kwargs)
-        Table.insert(self, **kwargs)
+        return Table.insert(self, **kwargs)
 
     def from_database(self):
         """
@@ -443,7 +440,7 @@ class Process_QS:
 
     def process_pagination_or_url_parameter(self):
         if not re.fullmatch("([\w]*-?[\w]*=[\w]*&?)+", self.qs):
-            return InvalidQueryString
+            raise InvalidQueryString
         if "page" in self.qs:
             return self.process_pagination()
         else:
@@ -454,7 +451,7 @@ class Process_QS:
         for op in self.qs.split("&"):
             field_operation, _, val = op.partition("=")
             if _ != "=":
-                raise HTTPException(
+                raise InvalidQueryString(
                     """please make sure to pass search parameter
                     as `field_name-operation=value`"""
                 )
@@ -470,7 +467,7 @@ class Process_QS:
                 val = self.table.field_format[field](val)
                 self.table.aggregate.add_operation(field, val, op)
             except KeyError:
-                return InvalidFieldName(field)
+                raise InvalidFieldName
             except AttributeError:
                 raise UpgradePlan()
         return self.table.execute()
@@ -490,7 +487,7 @@ class Process_QS:
         page = query_param_kv.get("page", None)
         page_size = query_param_kv.get("page-size", 10)
         if page is None:
-            raise HTTPException(
+            raise PageNotPassed(
                 """For Pagination `page` is must needed parameter.
                 For size of page, define `page-size`."""
             )

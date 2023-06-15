@@ -67,4 +67,12 @@ errors = {
         "message": "Please Check `username` and `password`",
         "status": 400,
     },
+    "NoRecordFound": {
+        "message": "No record was found",
+        "status": 404,
+    },
+    "PageNotPassed": {
+        "message": "For pagination `page` must be passed.",
+        "status": 400,
+    },
 }

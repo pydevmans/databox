@@ -4,7 +4,6 @@ from .core import (
     Paginator,
     FormattedTable,
     AggregatableTable,
-    TypeDoesntConfirmDefination,
     Process_QS,
 )
 
@@ -45,6 +44,8 @@ from .gen_response import (
     UserDoesNotExist,
     InvalidCredentials,
     RefreshLogInRequired,
+    NoRecordFound,
+    PageNotPassed,
 )
 
 from .resource import (
