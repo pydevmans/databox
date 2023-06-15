@@ -145,8 +145,6 @@ class TestFormattedTable(unittest.TestCase):
         self.t.insert(**self.user)
         self.t.delete(pk=1)
         with self.assertRaises(HTTPException):
-            self.t.query(first_name=self.user["first_name"])
-        with self.assertRaises(HTTPException):
             self.t.delete(pk=0)
 
 

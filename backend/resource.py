@@ -249,8 +249,7 @@ class User:
 class UserEncoder(JSONEncoder):
     def default(self, o):
         obj = deepcopy(o)
-        mem_dict = obj.membership.__dict__
-        del mem_dict["__objclass__"]
+        mem_dict = {"name": obj.membership.name, "value": obj.membership.value}
         obj_dict = obj.__dict__
         obj_dict["membership"] = mem_dict
         del obj_dict["password"]
@@ -292,13 +291,13 @@ class SignUp(Resource):
         if kwargs["username"] in os.listdir("database/usernames"):
             raise UserAlreadyExist
         try:
-            user = users_table.insert(**kwargs)
+            users_table.insert(**kwargs)
         except Exception:
             raise Error400
         os.mkdir(
             f"database/usernames/{kwargs['username']}",
         )
-        return {"data": UserEncoder().encode(user)}
+        return {"data": UserEncoder().encode(User(kwargs))}
 
 
 class Login(Resource):
@@ -353,7 +352,6 @@ class Logout(Resource):
     def get(self):
         if g.current_user:
             user = g.current_user
-            del g.current_user
             return {"data": UserEncoder().encode(user)}
         raise InvalidURL
 

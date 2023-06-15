@@ -289,8 +289,6 @@ class FormattedTable(Table):
                 if getattr(item, key) == kwargs[key]:
                     output.append(item)
                     break
-        if len(output) == 0:
-            raise HTTPException("No records were found.")
         return output
 
     def delete(self, pk):
