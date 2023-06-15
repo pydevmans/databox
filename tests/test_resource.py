@@ -1,4 +1,5 @@
 import os
+import json
 import shutil
 import pytest
 from app import app
@@ -70,11 +71,12 @@ def test_signup(tclient):
         follow_redirects=True,
     )
     if post_res.status_code == 200:
-        assert data["username"] == post_res.json["data"]["username"]
-        assert data["first_name"] == post_res.json["data"]["first_name"]
-        assert data["last_name"] == post_res.json["data"]["last_name"]
-        assert data["membership"] == post_res.json["data"]["membership"]
-        assert data["email_address"] == post_res.json["data"]["email_address"]
+        resp = json.loads(post_res.json["data"])
+        assert data["username"] == resp["username"]
+        assert data["first_name"] == resp["first_name"]
+        assert data["last_name"] == resp["last_name"]
+        assert data["membership"] == resp["membership"]
+        assert data["email_address"] == resp["email_address"]
         shutil.rmtree("database/usernames/jdoe")
     else:
         assert "message" in post_res.json
