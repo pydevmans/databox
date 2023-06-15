@@ -2,7 +2,7 @@
 
 import requests
 
-TESTING = False  # Set False to test Prod Server
+TESTING = True  # Set False to test Prod Server
 
 if TESTING:
     url = "http://localhost:5000"
@@ -17,7 +17,7 @@ def log_response(op):
             if res.status_code == 200:
                 print(f"[{op}]", res.json())
             else:
-                print(f"[{op} ERROR]", res.json())
+                print(f"[{op} ERROR]", res.text)
 
         return inner_wrapper
 
@@ -52,12 +52,12 @@ class UserActivity:
         res = requests.post(
             url + "/login", data={"username": self.username, "password": self.password}
         )
-        r = res.json()
         if res.status_code == 200:
+            r = res.json()
             self.headers.update({"x-access-token": r["token"]})
             print("[LOG IN]", r["data"])
         else:
-            print("[LOG IN ERROR]", r)
+            print("[LOG IN ERROR]", res.text)
 
     @log_response(op="LOGOUT")
     def logout(self):

@@ -75,7 +75,7 @@ def test_signup(tclient):
         assert data["username"] == resp["username"]
         assert data["first_name"] == resp["first_name"]
         assert data["last_name"] == resp["last_name"]
-        assert data["membership"] == resp["membership"]
+        assert data["membership"] == resp["membership"]["value"]
         assert data["email_address"] == resp["email_address"]
         shutil.rmtree("database/usernames/jasondoe")
     else:
