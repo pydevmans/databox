@@ -1,13 +1,14 @@
 import re
 import random
 import hashlib
-from .gen_response import Error403, InvalidURL, UpgradePlan
+from .gen_response import InvalidURL, UpgradePlan
 
 from abc import ABC, abstractmethod
 from functools import reduce
 from flask import make_response, current_app, g
 
 from flask_restx import reqparse
+from werkzeug.exceptions import Locked
 
 CAPITAL_LETTERS = (65, 90)
 SMALL_CAP_LETTERS = (96, 122)
@@ -404,7 +405,7 @@ def is_users_content(func):
     def wrapper(*args, **kwargs):
         if kwargs["username"] == g.current_user.username:
             return func(*args, **kwargs)
-        raise Error403
+        raise Locked
 
     return wrapper
 

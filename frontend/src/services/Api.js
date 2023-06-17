@@ -1,7 +1,7 @@
 import {api} from '../boot/axios';
 
 export function home() {
-    return api.get("/")
+    return api.get("/home")
 }
 
 export function features() {
