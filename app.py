@@ -1,5 +1,6 @@
 from flask import Flask
-from flask_restful import Api
+
+from flask_restx import Api
 from config import errors
 from backend import (
     UserProfile,

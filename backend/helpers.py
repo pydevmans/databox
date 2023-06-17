@@ -6,7 +6,8 @@ from .gen_response import Error403, InvalidURL, UpgradePlan
 from abc import ABC, abstractmethod
 from functools import reduce
 from flask import make_response, current_app, g
-from flask_restful import reqparse
+
+from flask_restx import reqparse
 
 CAPITAL_LETTERS = (65, 90)
 SMALL_CAP_LETTERS = (96, 122)
@@ -475,11 +476,11 @@ def req_parse_insert_in_database(table):
         for field, field_type in tuple(table.field_format.items())[1:]:
             if field_type == str:
                 parser.add_argument(
-                    field, type=str_type, required=True, location="form"
+                    field, type=str_type, required=True, location="json"
                 )
             else:
                 parser.add_argument(
-                    field, type=field_type, required=True, location="form"
+                    field, type=field_type, required=True, location="json"
                 )
         kwargs = parser.parse_args()
     except AttributeError:
@@ -494,6 +495,12 @@ def prep_resp(func):
         resp.headers["Access-Control-Allow-Origin"] = current_app.config.get(
             "ACCESS_CONTROL_ALLOW_ORIGIN"
         )
+        resp.headers["Access-Control-Allow-Methods"] = "*"
+        resp.headers["Access-Control-Allow-Credentials"] = "true"
+        resp.headers[
+            "Access-Control-Allow-Headers"
+        ] = "Origin, X-Api-Key, X-Requested-With, Accept,Content-Type,Authorization"
+        resp.headers["Content-Type"] = "application/json"
         return resp
 
     return wrapper
