@@ -91,25 +91,10 @@
 </template>
 
 <script>
-import { useQuasar } from "quasar";
 import { signup } from "../services/Api";
 
 export default {
   name: "LoginView",
-  setup() {
-    function getNotify() {
-      const $q = useQuasar();
-      $q.notify({
-        color: "green-4",
-        textColor: "white",
-        icon: "cloud_done",
-        message: "Submitted",
-      });
-    }
-    return {
-      getNotify,
-    };
-  },
   data() {
     return {
       username: "",
@@ -137,11 +122,24 @@ export default {
         this.membership
       )
         .then((resp) => {
-          console.log("[AXIOS RESP]", resp);
+          this.$q.notify({
+            type: "positive",
+            message: "Successfully Logged In.",
+          });
           return resp;
         })
-        .catch((err) => console.log("ERROR", err));
-      // this.getNotify();
+        .catch((err) => {
+          this.$q.notify({
+            type: "negative",
+            message: err.response.data.message,
+          });
+          if (Object.values(err.response.data.errors)) {
+            this.$q.notify({
+              type: "negative",
+              message: Object.values(err.response.data.errors),
+            });
+          }
+        });
     },
     onReset() {
       this.emailAddress = "";
@@ -151,9 +149,6 @@ export default {
       this.membership = "";
       this.username = "";
     },
-    // onToggle() {
-    //   this.isPwd = !this.isPwd;
-    // },
   },
 };
 </script>

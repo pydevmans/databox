@@ -11,7 +11,6 @@ export default defineComponent({
   methods: {
     fetchDash() {
       viewDatabase("user2").then((resp) => {
-        this.data = console.log(resp);
         this.data = resp.data;
       });
     },

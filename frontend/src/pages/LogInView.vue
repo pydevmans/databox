@@ -30,12 +30,7 @@
             </template>
           </q-input>
           <div>
-            <q-btn
-              label="Submit"
-              type="submit"
-              color="primary"
-              @click="onSubmit"
-            />
+            <q-btn label="Submit" type="submit" color="primary" />
             <q-btn
               label="Reset"
               type="reset"
@@ -52,8 +47,9 @@
 </template>
 
 <script>
-import { useQuasar } from "quasar";
+import { useAuthStore } from "stores/auth";
 import { login } from "../services/Api";
+import { mapActions } from "pinia";
 export default {
   name: "LoginView",
   data() {
@@ -63,22 +59,26 @@ export default {
       isPwd: true,
     };
   },
+  computer: {},
   methods: {
+    ...mapActions(useAuthStore, ["loggedIn"]),
     onSubmit() {
       login(this.username, this.password)
         .then((resp) => {
-          console.log("[AXIOS RESP]", resp);
-          // localStorage.setItem("token", resp.data.token);
-          document.cookie = `token=${resp.data.token}; Secure; max-age=3600;`;
+          this.$q.cookies.set("token", resp.data.token);
+          this.$router.push("/dashboard");
+          this.loggedIn(this.username);
+          this.$q.notify({ type: "positive", message: resp.data.data });
           return resp;
         })
-        .catch((err) => console.log("ERROR", err));
-      $q.notify({
-        color: "green-4",
-        textColor: "white",
-        icon: "cloud_done",
-        message: "Submitted",
-      });
+        .catch((err) => {
+          this.$q.notify({
+            type: "negative",
+            message:
+              err.response.data.message ||
+              Object.values(err.response.data.errors),
+          });
+        });
     },
   },
 };

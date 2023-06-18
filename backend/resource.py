@@ -26,6 +26,7 @@ from .gen_response import (
     InvalidURL,
     InvalidFieldValue,
     NoRecordFound,
+    InvalidCredentials,
 )
 from datetime import datetime, timedelta
 from flask import request, current_app, send_from_directory, g, make_response
@@ -359,7 +360,7 @@ class Login(Resource):
                 "token": token if type(token) == str else token.decode(),
             }
         else:
-            raise LogInRequired
+            raise InvalidCredentials
 
     @prep_resp
     def options(self):

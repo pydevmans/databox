@@ -458,7 +458,7 @@ def email_type(email_str):
         return email_str
     else:
         raise ValueError(
-            "Email is not valid. It has to be `(5-32 letters)@(3-32 letters).(1-16 letters)`"
+            "Email is not valid!! It has to be `(5-32 letters)@(3-32 letters).(1-16 letters)`"
         )
 
 

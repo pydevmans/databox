@@ -3,14 +3,12 @@
     <nav>
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/features">Features</RouterLink>
-      <RouterLink to="/dashboard">Dashboard</RouterLink>
+      <RouterLink v-if="authStatus" to="/dashboard">Dashboard</RouterLink>
       <!-- <RouterLink to="/dashboard/<database:str>">Database</RouterLink> -->
       <!-- <RouterLink to="/dashboard/<database:str>/query?page=2">Database</RouterLink> -->
-      <div v-if="isAuth">
-        <RouterLink to="/login">Log In</RouterLink>
-        <RouterLink to="/signup">Sign Up</RouterLink>
-      </div>
-      <RouterLink to="/logout">Logout</RouterLink>
+      <RouterLink v-if="!authStatus" to="/login">Log In</RouterLink>
+      <RouterLink v-if="!authStatus" to="/signup">Sign Up</RouterLink>
+      <RouterLink v-if="authStatus" to="/logout">Logout</RouterLink>
     </nav>
   </div>
 </template>
@@ -25,12 +23,13 @@ nav > a {
 }
 </style>
 <script>
+import { useAuthStore } from "stores/auth";
+import { mapState } from "pinia";
+
 export default {
   name: "HeaderComp",
-  data() {
-    return {
-      isAuth: false,
-    };
+  computed: {
+    ...mapState(useAuthStore, ["authStatus"]),
   },
 };
 </script>

@@ -1,6 +1,7 @@
 import HomeView from '../pages/HomeView.vue'
 import FeatureView from '../pages/FeatureView.vue'
 import LogInView from '../pages/LogInView.vue'
+import LogOutView from '../pages/LogOutView.vue'
 import DashboardView from '../pages/DashboardView.vue'
 import SignUpView from '../pages/SignUpView.vue'
 
@@ -24,6 +25,14 @@ const routes = [
     component: LogInView
   },
   {
+    path: '/logout',
+    name: 'logout',
+    component: LogOutView,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
     path: '/signup',
     name: 'signup',
     component: SignUpView
@@ -33,25 +42,29 @@ const routes = [
     name: 'features',
     component: FeatureView
   },
-  // {
-  //   path: '/profile',
-  //   name: 'profile',
-  //   component: ProfileView
-  // },
   {
     path: '/dashboard',
     name: 'dashboard',
-    component: DashboardView
+    component: DashboardView,
+    meta: {
+      requiresAuth: true
+    }
   },
   // {
-  //   path: '/dashboard/<database>',
+  //   path: '/dashboard/:database',
   //   name: 'database',
-  //   component: DatabaseView
+  //   component: DatabaseView,
+    // meta: {
+    //   requiresAuth: true
+    // },
   // },
   // {
-  //   path: '/dashboard/<database>/query?',
+  //   path: '/dashboard/:database/query?',
   //   name: 'home',
-  //   component: QueryView
+  //   component: QueryView,
+  //   meta: {
+  //     requiresAuth: true
+  //   }
   // },
   // Always leave this as last one,
   // but you can also remove it
