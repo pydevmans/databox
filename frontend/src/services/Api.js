@@ -1,5 +1,7 @@
 import {api} from '../boot/axios';
-
+import axios from 'axios';
+let url = process.env.API_URL
+let conf = {baseURL: url, withCredentials: true}
 export function home() {
     return api.get("/home")
 }
@@ -25,37 +27,37 @@ export function signup(username, password, email, firstName, lastName, membershi
 }
 
 export function logout() {
-    return api.get( "/logout")
+    return axios.get( "/logout", conf)
 }
 export function createDatabase(username) {
-    return api.post(`/users/${username}/databases`)
+    return axios.post(`/users/${username}/databases`, conf)
 }
 export function viewDatabase(username) {
-    return api.get(`/users/${username}/databases`)
+    return axios.get(`/users/${username}/databases`, conf)
 }
 export function daleteDatabases(username) {
-    return api.delete(`/users/${username}/databases`)
+    return axios.delete(`/users/${username}/databases`, conf)
 }
 export function viewRecords(username, database_title) {
-    return api.get(`/users/${username}/databases/${database_title}`)
+    return axios.get(`/users/${username}/databases/${database_title}`, conf)
 }
 export function renameDatabase(username, database_title) {
-    return api.put(`/users/${username}/databases/${database_title}`)
+    return axios.put(`/users/${username}/databases/${database_title}`, conf)
 }
 export function deleteDatabase(username, database_title) {
-    return api.delete(`/users/${username}/databases/${database_title}`)
+    return axios.delete(`/users/${username}/databases/${database_title}`, conf)
 }
 export function addRecord(username, database_title) {
-    return api.post(`/users/${username}/databases/${database_title}`)
+    return axios.post(`/users/${username}/databases/${database_title}`, conf)
 }
 export function viewRecord(username, database_title, pk) {
-    return api.get(`/users/${username}/databases/${database_title}/${pk}`)
+    return axios.get(`/users/${username}/databases/${database_title}/${pk}`, conf)
 }
 export function removeRecord(username, database_title, pk) {
-    return api.delete(`/users/${username}/databases/${database_title}/${pk}`)
+    return axios.delete(`/users/${username}/databases/${database_title}/${pk}`, conf)
 }
 export function viewProfile(username) {
-    return api.get(`/users/${username}/profile`)
+    return axios.get(`/users/${username}/profile`, conf)
 }
 export function viewFeatures() {
     return api.get("/features")

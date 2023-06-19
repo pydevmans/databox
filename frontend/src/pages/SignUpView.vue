@@ -118,11 +118,11 @@ export default {
         this.membership
       )
         .then((resp) => {
+          this.$router.push("/login");
           this.$q.notify({
             type: "positive",
-            message: "Successfully Logged In.",
+            message: "You have Successfully Signed Up.",
           });
-          return resp;
         })
         .catch((err) => {
           this.$q.notify({

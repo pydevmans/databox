@@ -71,7 +71,7 @@ module.exports = configure(function (/* ctx */) {
       // analyze: true,
       env: {
         API_URL: "https://mb9.pythonanywhere.com/",
-        API_URL: "http://127.0.0.1:5000/api",
+        // API_URL: "http://127.0.0.1:5000/",
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
@@ -101,7 +101,8 @@ module.exports = configure(function (/* ctx */) {
     devServer: {
       https: false,
       // open: true // opens browser window automatically,
-      proxy: "https://mb9.pythonanywhere.com/",
+      // proxy: "https://mb9.pythonanywhere.com/",
+      // proxy: "http://localhost:5000/",
       // proxy: {
       //   "/api": {
       //     target: "http://127.0.0.1:5000",
