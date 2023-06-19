@@ -8,6 +8,38 @@ frontend/dist
 __pycache__
 */__pycache__
 
+frontend/.DS_Store
+frontend/.thumbs.db
+frontend/node_modules
+frontend/package-lock.json
+
+# Quasar core related directories
+frontend/.quasar
+frontend/dist
+
+# Cordova related directories and files
+frontend/src-cordova/node_modules
+frontend/src-cordova/platforms
+frontend/src-cordova/plugins
+frontend/src-cordova/www
+
+# Capacitor related directories and files
+frontend/src-capacitor/www
+frontend/src-capacitor/node_modules
+
+# Log files
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Editor directories and files
+frontend/.idea
+frontend/*.suo
+frontend/*.ntvs*
+frontend/*.njsproj
+frontend/*.sln
+
+
 # Allow
 !database/users.txt
 !database/usernames/user/profiles.txt

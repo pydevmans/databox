@@ -5,12 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Python: Databox Flask App",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/app.py",
             "console": "integratedTerminal",
             "justMyCode": true,
+        },
+        {
+            "name": "Testing Python: Databox Flask App",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
+            "name": "Vue Databox Frontend App",
+            "type": "firefox",
+            "request": "launch",
+            "reAttach": true,
+            "webRoot": "${workspaceFolder}/frontend",
+            "breakonload": true,
+            "url": "http://127.0.0.1:9000",
+            "sourceMapPathOverrides": {
+
+                "webpack:///frontned/*": "${webRoot}/*",
+            }
+
         }
     ]
 }

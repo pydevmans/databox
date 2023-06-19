@@ -1,85 +1,87 @@
-from werkzeug.exceptions import HTTPException
+# from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import BadRequest, Unauthorized, Conflict
 
 
-class InvalidPropException(HTTPException):
-    pass
+class InvalidPropException(BadRequest):
+    description = "Property is invalid."
 
 
-class NotAValidFieldType(HTTPException):
-    pass
+class NotAValidFieldType(BadRequest):
+    description = "Type for one the Field is not Valid"
 
 
-class TypeDoesntConfirmDefination(HTTPException):
-    pass
+class TypeDoesntConfirmDefination(BadRequest):
+    description = "Type of Data for field does not confirm with defination."
 
 
-class InvalidQueryString(HTTPException):
-    pass
+class InvalidQueryString(BadRequest):
+    description = "Query String is not valid"
 
 
-class UpgradePlan(HTTPException):
-    pass
+class UpgradePlan(BadRequest):
+    description = "Current Plan does not have sufficient features. Please upgrade."
 
 
-class InvalidDatabase(HTTPException):
-    pass
+class InvalidDatabase(Conflict):
+    description = "Provided Database is invalid."
 
 
-class InvalidFieldName(HTTPException):
-    pass
+class InvalidFieldName(Conflict):
+    description = "The Field name provided is not valid"
 
 
-class InvalidFieldValue(HTTPException):
-    pass
+class InvalidFieldValue(Conflict):
+    description = "Provided Feild Value is incorrect."
 
 
-class InvalidTableName(HTTPException):
-    pass
+class InvalidTableName(Conflict):
+    description = "Provided Tablename is invalid."
 
 
-class Error400(HTTPException):
-    pass
+class Error400(BadRequest):
+    description = "Forbidden."
 
 
-class Error401(HTTPException):
-    pass
+class Error401(BadRequest):
+    description = "Access UnAuthorized."
 
 
-class Error403(HTTPException):
-    pass
+class Error403(BadRequest):
+    description = "Forbidden."
 
 
-class InvalidURL(HTTPException):
-    pass
+class InvalidURL(BadRequest):
+    description = "Forbidden."
 
 
-class PkIsNotInt(HTTPException):
-    pass
+class PkIsNotInt(BadRequest):
+    description = "Value of Pk has to be Int type."
 
 
-class LogInRequired(HTTPException):
-    pass
+class LogInRequired(BadRequest):
+    description = "Make sure you have logged in."
+    code = 401
 
 
-class UserAlreadyExist(HTTPException):
-    pass
+class UserAlreadyExist(BadRequest):
+    description = "User with provided `username` already Exist."
 
 
-class RefreshLogInRequired(HTTPException):
-    pass
+class RefreshLogInRequired(Unauthorized):
+    description = "Login in again to confirm the credentials."
 
 
-class UserDoesNotExist(HTTPException):
-    pass
+class UserDoesNotExist(BadRequest):
+    description = "User with provided `username` does not exist."
 
 
-class InvalidCredentials(HTTPException):
-    pass
+class InvalidCredentials(BadRequest):
+    description = "Please Check `username` and `password`"
 
 
-class NoRecordFound(HTTPException):
-    pass
+class NoRecordFound(BadRequest):
+    description = "No record was found"
 
 
-class PageNotPassed(HTTPException):
-    pass
+class PageNotPassed(BadRequest):
+    description = "For pagination `page` must be passed."

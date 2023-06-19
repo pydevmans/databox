@@ -26,22 +26,24 @@ from .gen_response import (
     InvalidURL,
     InvalidFieldValue,
     NoRecordFound,
+    InvalidCredentials,
 )
 from datetime import datetime, timedelta
-from flask import request, current_app, send_from_directory, g
-from flask_restful import Resource, fields, reqparse
+from flask import request, current_app, send_from_directory, g, make_response
+
+from flask_restx import Resource, fields, reqparse
 from json import JSONEncoder
 
 
 class Membership(Enum):
-    free = 0
-    basic = 1
-    premium = 2
+    Free = 0
+    Basic = 1
+    Premium = 2
 
 
 def login_required(func):
     def wrapper(*args, **kwargs):
-        token = request.headers.get("x-access-token")
+        token = request.cookies.get("token")
         if not token:
             raise LogInRequired
         payload = jwt.decode(
@@ -71,11 +73,11 @@ class ClientServiceType:
         self.membership_name = current_user.membership.name
 
     def get_table_klass(self):
-        if self.membership_name == "free":
+        if self.membership_name == "Free":
             return Table
-        elif self.membership_name == "basic":
+        elif self.membership_name == "Basic":
             return FormattedTable
-        elif self.membership_name == "premium":
+        elif self.membership_name == "Premium":
             return AggregatableTable
 
 
@@ -115,8 +117,8 @@ class HomePage(Resource):
                 "Flask-RESTful",
                 "pytest",
             ],
-            "For General help": "visit http://mb9.pythonanywhere.com/help",
-            "For Logged in User based help": "visit http://mb9.pythonanywhere.com/helpcenter",
+            "For General help": "visit https://mb9.pythonanywhere.com/help",
+            "For Logged in User based help": "visit https://mb9.pythonanywhere.com/helpcenter",
         }
         return {"data": resp_data}
 
@@ -125,18 +127,18 @@ class Help(Resource):
     @prep_resp
     def get(self):
         resp_data = {
-            "To Sign Up User": "curl http://mb9.pythonanywhere.com/signup -d"
+            "To Sign Up User": "curl https://mb9.pythonanywhere.com/signup -d"
             ' "first_name=<first_name>" -d "last_name=<last_name>" -d'
             ' "membership=<0|1|2>" -d "username=<username>" -d'
             ' "email_address=<email_address>" -d "password=<password>"',
-            "To Sign In": "curl http://mb9.pythonanywhere.com/login -X POST -d"
+            "To Sign In": "curl https://mb9.pythonanywhere.com/login -X POST -d"
             ' "username=<username>" -d "password=<password>" -v',
-            "To Log out": 'curl --cookie "session=<session_key>" http://mb9.pythonanywhere.com/logout',
-            "To Checkout featurs": "curl http://mb9.pythonanywhere.com/features",
-            "To See General help": "curl http://mb9.pythonanywhere.com/help",
-            "To See all logged in user based help": "curl http://mb9.pythonanywhere.com/helpcenter",
+            "To Log out": 'curl --cookie "session=<session_key>" https://mb9.pythonanywhere.com/logout',
+            "To Checkout featurs": "curl https://mb9.pythonanywhere.com/features",
+            "To See General help": "curl https://mb9.pythonanywhere.com/help",
+            "To See all logged in user based help": "curl https://mb9.pythonanywhere.com/helpcenter",
             "To make all GET requests in browser type this command to console (<crypt_signed_session_key> can be found from response of `/login`)": "document.cookie = 'session=<crypt_signed_session_key>' # till `;`",
-            "Download Py Script Test This App Functionality": "http://mb9.pythonanywhere.com/script",
+            "Download Py Script Test This App Functionality": "https://mb9.pythonanywhere.com/script",
         }
         return {"data": resp_data}
 
@@ -150,17 +152,17 @@ class HelpCenter(Resource):
         username = g.current_user.username
         resp = {
             "To See the User profile": 'curl --cookie "session=<session_key>"'
-            f" http://mb9.pythonanywhere.com/users/{username}/profile",
-            "To Create Database": "curl http://mb9.pythonanywhere.com/users/"
+            f" https://mb9.pythonanywhere.com/users/{username}/profile",
+            "To Create Database": "curl https://mb9.pythonanywhere.com/users/"
             f'{username}/databases -X POST --cookie "session=<session_key>" -d '
             '"title=<title_here>" -d "fields=name:str,age:int"',
             "To List all Database user has": 'curl --cookie "session=<session_key>'
-            f'" http://mb9.pythonanywhere.com/users/{username}/databases',
+            f'" https://mb9.pythonanywhere.com/users/{username}/databases',
             "To get records in pages": 'curl --cookie "session=<session_key>" '
-            f"http://mb9.pythonanywhere.com/users/{username}/databases?page=<page "
+            f"https://mb9.pythonanywhere.com/users/{username}/databases?page=<page "
             "number>&page-size=<items per page>",
             "To Query database on as many fields": {
-                "command": 'curl --cookie "session=<session_key>" http://mb9.pytho'
+                "command": 'curl --cookie "session=<session_key>" https://mb9.pytho'
                 f"nanywhere.com/users/{username}/databases?<field>-<op>=<value>&<fi"
                 "eld>-<op>=<value>",
                 "Valid `op` are": "(lt, gt, ge, le, eq, ne, sw)",
@@ -172,19 +174,19 @@ class HelpCenter(Resource):
                 "ne": "Not Equal",
                 "sw": "Start With",
             },
-            "To Delete `ALL` Database user has": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
+            "To Delete `ALL` Database user has": 'curl --cookie "session=<session_key>" -X DELETE https://mb9.python'
             f"anywhere.com/users/{username}/databases",
-            "To List all record of Database": 'curl --cookie "session=<session_key>" http://mb9.pythonanywhere.c'
+            "To List all record of Database": 'curl --cookie "session=<session_key>" https://mb9.pythonanywhere.c'
             f"om/users/{username}/databases/<database>",
-            "To Add record to Database": 'curl --cookie "session=<session_key>" -X POST http://mb9.pythonan'
+            "To Add record to Database": 'curl --cookie "session=<session_key>" -X POST https://mb9.pythonan'
             f"ywhere.com/users/{username}/databases/<database>",
-            "To Rename the Database": 'curl --cookie "session=<session_key>" -X PUT http://mb9.pythonany'
+            "To Rename the Database": 'curl --cookie "session=<session_key>" -X PUT https://mb9.pythonany'
             f"where.com/users/{username}/databases/<database>",
-            "To Delete specific Database": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
+            "To Delete specific Database": 'curl --cookie "session=<session_key>" -X DELETE https://mb9.python'
             f"anywhere.com/users/{username}/databases/<database>",
-            "To Get record by Primary key for specific Database": 'curl --cookie "session=<session_key>" http://mb9.pythonanywhere.c'
+            "To Get record by Primary key for specific Database": 'curl --cookie "session=<session_key>" https://mb9.pythonanywhere.c'
             f"om/users/{username}/databases/<database>/<pk_of_record>",
-            "To Delete the record by primary key for specific Database": 'curl --cookie "session=<session_key>" -X DELETE http://mb9.python'
+            "To Delete the record by primary key for specific Database": 'curl --cookie "session=<session_key>" -X DELETE https://mb9.python'
             f"anywhere.com/users/{username}/databases/<database>/<pk_of_record>",
         }
         return {"data": resp}
@@ -206,7 +208,8 @@ class Privileged(Resource):
                 "username": "user2",
                 "password": "HelloWorld2023!",
             },
-            "Download Py Script Test This App Functionality": "http://mb9.pythonanywhere.com/script",
+            "Download Py Script Test This App Functionality": "visit https://mb9.pythonanywhere.com/script",
+            "To checkout frontend": "visit https://databox-frontend.s3.amazonaws.com/index.html",
         }
         return {"data": resp_data}
 
@@ -273,24 +276,30 @@ class SignUp(Resource):
     @prep_resp
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument("first_name", type=str, required=True, location="form")
-        parser.add_argument("last_name", type=str, required=True, location="form")
+        parser.add_argument("first_name", type=str, required=True, location="json")
+        parser.add_argument("last_name", type=str, required=True, location="json")
         parser.add_argument(
-            "username", type=username_type, required=True, location="form"
+            "username", type=username_type, required=True, location="json"
         )
-        parser.add_argument("password", type=str, required=True, location="form")
+        parser.add_argument("password", type=str, required=True, location="json")
         parser.add_argument(
-            "email_address", type=email_type, required=True, location="form"
+            "email_address", type=email_type, required=True, location="json"
         )
         parser.add_argument(
-            "membership", choices=(1, 2, 0), type=int, required=True, location="form"
+            "membership",
+            choices=("Premium", "Basic", "Free"),
+            type=str,
+            required=True,
+            location="json",
         )
         kwargs = parser.parse_args()
+        attr = getattr(Membership, kwargs["membership"])
+        kwargs["membership"] = attr.value
         kwargs["password"] = create_hash_password(kwargs["password"])
-        users_table = AggregatableTable.access_table("users")
         if kwargs["username"] in os.listdir("database/usernames"):
             raise UserAlreadyExist
         try:
+            users_table = AggregatableTable.access_table("users")
             users_table.insert(**kwargs)
         except Exception:
             raise Error400
@@ -298,6 +307,11 @@ class SignUp(Resource):
             f"database/usernames/{kwargs['username']}",
         )
         return {"data": UserEncoder().encode(User(kwargs))}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class Login(Resource):
@@ -317,9 +331,9 @@ class Login(Resource):
         """
         parser = reqparse.RequestParser()
         parser.add_argument(
-            "username", type=username_type, required=True, location="form"
+            "username", type=username_type, required=True, location="json"
         )
-        parser.add_argument("password", type=str, required=True, location="form")
+        parser.add_argument("password", required=True, location="json")
         kwargs = parser.parse_args()
         users_table = AggregatableTable.access_table("users")
         user = users_table.query(username=kwargs["username"])
@@ -346,7 +360,12 @@ class Login(Resource):
                 "token": token if type(token) == str else token.decode(),
             }
         else:
-            raise LogInRequired
+            raise InvalidCredentials
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class Logout(Resource):
@@ -399,12 +418,12 @@ class UserDatabases(Resource):
         `title` can be alphanumeric. No special letters are allowed.
         """
         parser = reqparse.RequestParser()
-        parser.add_argument("title", type=str, required=True, location="form")
+        parser.add_argument("title", type=str, required=True, location="json")
         parser.add_argument(
             "fields",
             type=fields_type,
             required=True,
-            location="form",
+            location="json",
         )
         kwargs = parser.parse_args()
         parsed_fields = tuple(i.lower() for i in kwargs["fields"].split(","))
@@ -415,6 +434,11 @@ class UserDatabases(Resource):
             raise UpgradePlan
         table(tablename, parsed_fields)
         return {"data": kwargs["title"]}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class UserDatabase(Resource):
@@ -436,7 +460,7 @@ class UserDatabase(Resource):
     @is_users_content
     @prep_resp
     def put(self, username, database):
-        name = request.form["database"]
+        name = request.json["database"]
         if not (name and re.fullmatch("[a-zA-Z0-9]+", name)):
             raise InvalidFieldValue(
                 f"Please provide valid database name. `{name}` is not valid."
@@ -463,6 +487,11 @@ class UserDatabase(Resource):
         kwargs = req_parse_insert_in_database(table)
         table.insert(**kwargs)
         return {"data": kwargs}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class InteracDatabase(Resource):
@@ -495,3 +524,8 @@ class InteracDatabase(Resource):
         except ValueError:
             raise PkIsNotInt
         return {"data": record}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
