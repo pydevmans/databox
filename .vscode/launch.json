@@ -13,6 +13,14 @@
             "justMyCode": true,
         },
         {
+            "name": "Testing Python: Databox Flask App",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
             "name": "Vue Databox Frontend App",
             "type": "firefox",
             "request": "launch",

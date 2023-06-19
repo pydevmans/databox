@@ -423,7 +423,7 @@ class UserDatabases(Resource):
             "fields",
             type=fields_type,
             required=True,
-            location="form",
+            location="json",
         )
         kwargs = parser.parse_args()
         parsed_fields = tuple(i.lower() for i in kwargs["fields"].split(","))
@@ -460,7 +460,7 @@ class UserDatabase(Resource):
     @is_users_content
     @prep_resp
     def put(self, username, database):
-        name = request.form["database"]
+        name = request.json["database"]
         if not (name and re.fullmatch("[a-zA-Z0-9]+", name)):
             raise InvalidFieldValue(
                 f"Please provide valid database name. `{name}` is not valid."
