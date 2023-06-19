@@ -34,4 +34,4 @@ jobs:
           cd ..
       - name: Copy files to the test website with the AWS CLI
         run: |
-          aws s3 sync --acl public-read frontend/dist ${{ vars.S3_BUCKET_ARN }}
+          aws s3 sync --acl public-read frontend/dist/spa ${{ vars.S3_BUCKET_ARN }}
