@@ -4,6 +4,10 @@ import LogInView from '../pages/LogInView.vue'
 import LogOutView from '../pages/LogOutView.vue'
 import DashboardView from '../pages/DashboardView.vue'
 import SignUpView from '../pages/SignUpView.vue'
+import DatabaseView from '../pages/DatabaseView.vue'
+import ErrorNotFound from '../pages/ErrorNotFound.vue'
+import TestView from '../pages/TestView.vue'
+
 
 const routes = [
   {
@@ -51,27 +55,36 @@ const routes = [
     }
   },
   // {
-  //   path: '/dashboard/:database',
+  //   path: '/databases/:database',
   //   name: 'database',
   //   component: DatabaseView,
-    // meta: {
-    //   requiresAuth: true
-    // },
+  //   meta: {
+  //     requiresAuth: true
+  //   },
   // },
+    {
+      path: '/test',
+      name: 'test',
+      component: TestView,
+      meta: {
+        requiresAuth: true
+      }
+    },
   // {
-  //   path: '/dashboard/:database/query?',
+  //   path: '/databases/:database/query?',
   //   name: 'home',
-  //   component: QueryView,
+  //   component: RecordsView,
   //   meta: {
   //     requiresAuth: true
   //   }
   // },
   // Always leave this as last one,
   // but you can also remove it
-  // {
-  //   path: '/:catchAll(.*)*',
-  //   component: () => import('pages/ErrorNotFound.vue')
-  // }
+  {
+    path: '/:catchAll(.*)*',
+    name: 'error404',
+    component: ErrorNotFound
+  }
 ]
 
 export default routes

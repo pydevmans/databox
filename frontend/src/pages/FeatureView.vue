@@ -54,8 +54,10 @@
 #features {
   width: 70%;
   margin: 25px auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 89vh;
+  flex-direction: row;
 }
 h4 {
   text-align: center;
@@ -80,12 +82,13 @@ li {
 }
 
 .product {
-  padding: 25px 25px;
+  padding: 25px 20px;
   border: 1px solid grey;
-  height: 700px;
   border-radius: 5px;
-  margin: 25px 15px;
-  min-width: 275px;
+  margin: 25px auto;
+  width: 375px;
+  height: max-content;
+  flex: 0 0 auto;
 }
 </style>
 

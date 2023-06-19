@@ -12,7 +12,6 @@ import { mapState } from 'pinia'
  * with the Router instance.
  */
 import { useAuthStore } from 'src/stores/auth'
-const authStatus = mapState(useAuthStore, ['authStatus'])
 
 export default route(function (/* { store, ssrContext } */) {
   const createHistory = process.env.SERVER
@@ -30,12 +29,11 @@ export default route(function (/* { store, ssrContext } */) {
   })
 
   Router.beforeEach((to, from) => {
-    console.log("ROUTE CHECK")
+    const authStatus = useAuthStore().authStatus
     if (to.meta.requiresAuth && !authStatus) {
-      return {name : "login"} 
+      return {name : "dashboard"} 
     }
-    return {name: to.name};
-    
+    return true;
   })
 
   return Router

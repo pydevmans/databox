@@ -10,10 +10,9 @@
 <style scoped>
 #footer {
   text-align: center;
-  bottom: 0px;
 }
 
 a {
-  padding: 0 5px;
+  margin: 5px 5px;
 }
 </style>

@@ -1,17 +1,16 @@
 <template>
-  <div class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
+  <div
+    id="contain404"
+    class="bg-white text-white text-center q-pa-md flex flex-center"
+  >
     <div>
-      <div style="font-size: 30vh">
-        404
-      </div>
+      <div style="font-size: 30vh; color: black">404</div>
 
-      <div class="text-h2" style="opacity:.4">
-        Oops. Nothing here...
-      </div>
+      <div class="text-h2" style="opacity: 0.4">Oops. Nothing here...</div>
 
       <q-btn
         class="q-mt-xl"
-        color="white"
+        color="black"
         text-color="blue"
         unelevated
         to="/"
@@ -23,9 +22,14 @@
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'ErrorNotFound'
-})
+  name: "ErrorNotFound",
+});
 </script>
+<style>
+#contain404 {
+  height: 90vh;
+}
+</style>

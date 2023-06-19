@@ -73,11 +73,11 @@ class ClientServiceType:
         self.membership_name = current_user.membership.name
 
     def get_table_klass(self):
-        if self.membership_name == "free":
+        if self.membership_name == "Free":
             return Table
-        elif self.membership_name == "basic":
+        elif self.membership_name == "Basic":
             return FormattedTable
-        elif self.membership_name == "premium":
+        elif self.membership_name == "Premium":
             return AggregatableTable
 
 

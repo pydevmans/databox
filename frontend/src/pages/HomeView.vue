@@ -53,7 +53,7 @@ export default defineComponent({
 <style scoped>
 #homeview {
   display: block;
-  height: 860px;
+  min-height: 92vh;
   width: 800px;
   margin: 10px auto;
 }

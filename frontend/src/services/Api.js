@@ -36,8 +36,8 @@ export function viewDatabase(username) {
 export function daleteDatabases(username) {
     return api.delete(`/users/${username}/databases`)
 }
-export function viewRecords(username) {
-    return api.get(`/users/${username}/databases`)
+export function viewRecords(username, database_title) {
+    return api.get(`/users/${username}/databases/${database_title}`)
 }
 export function renameDatabase(username, database_title) {
     return api.put(`/users/${username}/databases/${database_title}`)
@@ -46,7 +46,7 @@ export function deleteDatabase(username, database_title) {
     return api.delete(`/users/${username}/databases/${database_title}`)
 }
 export function addRecord(username, database_title) {
-    return api.post(`/users/{username}/databases/{database_title}`)
+    return api.post(`/users/${username}/databases/${database_title}`)
 }
 export function viewRecord(username, database_title, pk) {
     return api.get(`/users/${username}/databases/${database_title}/${pk}`)
