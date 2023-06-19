@@ -210,23 +210,9 @@ class HelpCenter(Resource):
 class Privileged(Resource):
     @prep_resp
     def get(self):
-        resp_data = {
-            "free_membership": {
-                "username": "user0",
-                "password": "HelloWorld2023!",
-            },
-            "basic_membership": {
-                "username": "user1",
-                "password": "HelloWorld2023!",
-            },
-            "premium_membership": {
-                "username": "user2",
-                "password": "HelloWorld2023!",
-            },
-            "Download Py Script Test This App Functionality": "visit https://mb9.pythonanywhere.com/script",
-            "To checkout frontend": "visit https://databox-frontend.s3.amazonaws.com/index.html",
+        return {
+            "data": "To checkout frontend visit https://databox-frontend.s3.amazonaws.com/index.html#/"
         }
-        return {"data": resp_data}
 
     @prep_resp
     def options(self):
