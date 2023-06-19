@@ -102,7 +102,7 @@ module.exports = configure(function (/* ctx */) {
       https: false,
       // open: true // opens browser window automatically,
       // proxy: "https://mb9.pythonanywhere.com/",
-      // proxy: "http://localhost:5000/",
+      // proxy: "http://127.0.0.1:5000/",
       // proxy: {
       //   "/api": {
       //     target: "http://127.0.0.1:5000",
