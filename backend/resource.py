@@ -43,7 +43,7 @@ class Membership(Enum):
 
 def login_required(func):
     def wrapper(*args, **kwargs):
-        token = request.cookies.get("token")
+        token = request.cookies.get("token", None)
         if not token:
             raise LogInRequired
         payload = jwt.decode(
@@ -122,6 +122,11 @@ class HomePage(Resource):
         }
         return {"data": resp_data}
 
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
+
 
 class Help(Resource):
     @prep_resp
@@ -141,6 +146,11 @@ class Help(Resource):
             "Download Py Script Test This App Functionality": "https://mb9.pythonanywhere.com/script",
         }
         return {"data": resp_data}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class HelpCenter(Resource):
@@ -191,6 +201,11 @@ class HelpCenter(Resource):
         }
         return {"data": resp}
 
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
+
 
 class Privileged(Resource):
     @prep_resp
@@ -213,11 +228,21 @@ class Privileged(Resource):
         }
         return {"data": resp_data}
 
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
+
 
 class RandomUser(Resource):
     @prep_resp
     def get(self):
         return {"data": random_user_generator()}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class Test(Resource):
@@ -225,6 +250,11 @@ class Test(Resource):
     @prep_resp
     def get(self):
         return {"data": {"secret": "This is a Secret!"}}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class Script(Resource):
@@ -234,6 +264,11 @@ class Script(Resource):
             current_app.root_path, current_app.config["DOWNLOADABLES_FOLDER"]
         )
         return send_from_directory(downloadables, "client.py", as_attachment=True)
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class User:
@@ -270,6 +305,11 @@ class UserProfile(Resource):
         table = ClientServiceType(g.current_user).get_table_klass()
         resp["feature_for_user"] = table._features()
         return {"data": resp}
+
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
 
 
 class SignUp(Resource):
@@ -392,6 +432,11 @@ class MembershipFeatures(Resource):
             }
         }
 
+    @prep_resp
+    def options(self):
+        resp = make_response()
+        return resp
+
 
 class UserDatabases(Resource):
     @login_required
@@ -436,7 +481,7 @@ class UserDatabases(Resource):
         return {"data": kwargs["title"]}
 
     @prep_resp
-    def options(self):
+    def options(self, username):
         resp = make_response()
         return resp
 
@@ -489,7 +534,7 @@ class UserDatabase(Resource):
         return {"data": kwargs}
 
     @prep_resp
-    def options(self):
+    def options(self, username, database):
         resp = make_response()
         return resp
 
@@ -526,6 +571,6 @@ class InteracDatabase(Resource):
         return {"data": record}
 
     @prep_resp
-    def options(self):
+    def options(self, username, database, pk):
         resp = make_response()
         return resp

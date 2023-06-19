@@ -61,9 +61,9 @@ export default {
       login(this.username, this.password)
         .then((resp) => {
           this.$q.cookies.set("token", resp.data.token);
-          this.$router.push("/dashboard");
           this.loggedIn(this.username);
           this.$q.notify({ type: "positive", message: resp.data.data });
+          this.$router.push("/dashboard");
           return resp;
         })
         .catch((err) => {
