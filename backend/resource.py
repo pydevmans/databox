@@ -7,8 +7,8 @@ from json import JSONEncoder
 from functools import wraps
 from pathlib import Path
 import jwt
-from flask import request, current_app, send_from_directory, g
-from flask_restx import Api, Resource, fields, reqparse
+from flask import current_app, g, request, send_from_directory, Response
+from flask_restx import Api, Resource, reqparse
 from .helpers import (
     is_users_content,
     create_hash_password,
@@ -33,6 +33,11 @@ from .gen_response import (
     NoRecordFound,
     InvalidCredentials,
 )
+
+
+class CustomResource(Resource):
+    def options(self):
+        return Response(status="200")
 
 
 def resp_headers(func):
@@ -112,7 +117,7 @@ class ClientServiceType:
 
 
 @api.route("/home")
-class HomePage(Resource):
+class HomePage(CustomResource):
     def get(self):
         """
         Homepage information for App.
@@ -148,7 +153,7 @@ class HomePage(Resource):
 
 
 @api.route("/help")
-class Help(Resource):
+class Help(CustomResource):
     def get(self):
         """
         To provide use testing user credential to get started, testing RESTful API on OpenAPI (formerly Swagger).
@@ -171,7 +176,7 @@ class Help(Resource):
 
 
 @api.route("/random_user")
-class RandomUser(Resource):
+class RandomUser(CustomResource):
     def get(self):
         """
         Random user data generator.
@@ -180,7 +185,7 @@ class RandomUser(Resource):
 
 
 @api.route("/script")
-class Script(Resource):
+class Script(CustomResource):
     def get(self):
         """
         To download a script to test all these features in one go or run what needs to be done. like Jupyter Notebook!
@@ -216,7 +221,7 @@ class UserEncoder(JSONEncoder):
 
 
 @api.route("/users/<string:username>/profile")
-class UserProfile(Resource):
+class UserProfile(CustomResource):
     method_decorators = [is_users_content, login_required]
 
     def get(self, username):
@@ -252,7 +257,7 @@ signup_parser.add_argument(
 
 
 @api.route("/signup")
-class SignUp(Resource):
+class SignUp(CustomResource):
     @api.expect(signup_parser)
     def post(self):
         """
@@ -283,7 +288,7 @@ login_parser.add_argument("password", required=True, location="json")
 
 
 @api.route("/login")
-class Login(Resource):
+class Login(CustomResource):
     @api.expect(login_parser)
     def post(self):
         """
@@ -324,7 +329,7 @@ class Login(Resource):
 
 
 @api.route("/logout")
-class Logout(Resource):
+class Logout(CustomResource):
     method_decorators = [login_required]
 
     def get(self):
@@ -338,7 +343,7 @@ class Logout(Resource):
 
 
 @api.route("/features")
-class MembershipFeatures(Resource):
+class MembershipFeatures(CustomResource):
     "This class lists all the features that are set out to be provided among"
     "all 3 classes of membership type."
 
@@ -366,7 +371,7 @@ userdatabases_parser.add_argument(
 
 
 @api.route("/users/<string:username>/databases")
-class UserDatabases(Resource):
+class UserDatabases(CustomResource):
     method_decorators = [is_users_content, login_required]
 
     def get(self, username):
@@ -421,7 +426,7 @@ def req_parse_insert_in_database(table):
 
 
 @api.route("/users/<string:username>/databases/<string:database>")
-class UserDatabase(Resource):
+class UserDatabase(CustomResource):
     method_decorators = [is_users_content, login_required]
 
     def get(self, username, database):
@@ -477,7 +482,7 @@ class UserDatabase(Resource):
 
 
 @api.route("/users/<string:username>/databases/<string:database>/<int:pk>")
-class InteracDatabase(Resource):
+class InteracDatabase(CustomResource):
     method_decorators = [is_users_content, login_required]
 
     def get(self, username, database, pk):
