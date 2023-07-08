@@ -3,10 +3,12 @@
 ## Running Tests and getting Test Coverage report
 
     At the project directory level directory run the command,
-
-- `coverage run -m pytest` (to run all tests)
-- `coverage report -m` (to generate report in CLI)
-- `coverage html` (to generate report in HTML Web Page)
+    
+``` sh
+coverage run -m pytest
+coverage report -m
+coverage html
+```
 
 ## Sources:
 

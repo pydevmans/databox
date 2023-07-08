@@ -403,23 +403,20 @@ database_parser = reqparse.RequestParser()
 
 
 def req_parse_insert_in_database(table):
-    def wrapper(*args, **kwargs):
-        try:
-            for field, field_type in tuple(table.field_format.items())[1:]:
-                if field_type == str:
-                    database_parser.add_argument(
-                        field, type=str_type, required=True, location="json"
-                    )
-                else:
-                    database_parser.add_argument(
-                        field, type=field_type, required=True, location="json"
-                    )
-            kwargs = database_parser.parse_args()
-        except AttributeError:
-            raise UpgradePlan
-        return kwargs
-
-    return wrapper
+    try:
+        for field, field_type in tuple(table.field_format.items())[1:]:
+            if field_type == str:
+                database_parser.add_argument(
+                    field, type=str_type, required=True, location="json"
+                )
+            else:
+                database_parser.add_argument(
+                    field, type=field_type, required=True, location="json"
+                )
+        kwargs = database_parser.parse_args()
+    except AttributeError:
+        raise UpgradePlan
+    return kwargs
 
 
 @api.route("/users/<string:username>/databases/<string:database>")
@@ -473,12 +470,9 @@ class UserDatabase(Resource):
         """
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
-        kwargs = req_parse_insert_in_database(table)
-        import pdb
-
-        pdb.set_trace()
-        table.insert(**kwargs)
-        return {"data": kwargs}
+        parsed_kwargs = req_parse_insert_in_database(table)
+        table.insert(**parsed_kwargs)
+        return {"data": parsed_kwargs}
 
 
 @api.route("/users/<string:username>/databases/<string:database>/<int:pk>")

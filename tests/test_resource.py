@@ -30,7 +30,7 @@ def logged_user_client(tclient):
     post_res = tclient.post(
         "/login", json=dict(username=username, password=password)
     ).json
-    tclient.set_cookie("token", post_res["token"])
+    tclient.set_cookie("token", tclient.get_cookie(key="token").value)
     yield tclient
     os.remove(f"database/usernames/{username}/test.txt")
 
