@@ -54,14 +54,14 @@ const routes = [
       requiresAuth: true
     }
   },
-  // {
-  //   path: '/databases/:database',
-  //   name: 'database',
-  //   component: DatabaseView,
-  //   meta: {
-  //     requiresAuth: true
-  //   },
-  // },
+  {
+    path: '/databases/:databaseName(\\S+)',
+    name: 'database',
+    component: DatabaseView,
+    // meta: {
+    //   requiresAuth: true
+    // },
+  },
     {
       path: '/test',
       name: 'test',

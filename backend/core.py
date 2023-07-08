@@ -296,7 +296,8 @@ class FormattedTable(Table):
             raise HTTPException(f"Can not delete pk:`{pk}`, since it is title record.")
         record = self.query(pk=pk)
         with generic_open(self.filelocation, "r+") as file:
-            itertools.islice(file.readline(), pk)
+            for _ in range(pk):
+                file.readline()
             start = file.tell()
             file.readline()
             end = file.tell()
