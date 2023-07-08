@@ -1,17 +1,22 @@
 import os
 import re
-import jwt
-from copy import deepcopy
 from enum import Enum
+from copy import deepcopy
+from datetime import datetime, timedelta
+from json import JSONEncoder
+from functools import wraps
+from pathlib import Path
+import jwt
+from flask import request, current_app, send_from_directory, g
+from flask_restx import Api, Resource, fields, reqparse
 from .helpers import (
     is_users_content,
     create_hash_password,
     random_user_generator,
+    str_type,
     username_type,
     fields_type,
     email_type,
-    req_parse_insert_in_database,
-    prep_resp,
     check_password,
 )
 from .core import AggregatableTable, FormattedTable, Process_QS, Table
@@ -28,20 +33,29 @@ from .gen_response import (
     NoRecordFound,
     InvalidCredentials,
 )
-from datetime import datetime, timedelta
-from flask import request, current_app, send_from_directory, g, make_response
-
-from flask_restx import Resource, fields, reqparse
-from json import JSONEncoder
 
 
-class Membership(Enum):
-    Free = 0
-    Basic = 1
-    Premium = 2
+def resp_headers(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        resp = func(*args, **kwargs)
+        resp.headers.add(
+            "Access-Control-Allow-Headers",
+            "Origin, Accept, Content-Type, Authorization",
+        )
+        resp.headers.add("Access-Control-Allow-Credentials", "true")
+        resp.headers.add("Access-Control-Allow-Methods", "*")
+        resp.headers.add(
+            "Access-Control-Allow-Origin",
+            current_app.config.get("ACCESS_CONTROL_ALLOW_ORIGIN"),
+        )
+        return resp
+
+    return wrapper
 
 
 def login_required(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         token = request.cookies.get("token", None)
         if not token:
@@ -68,6 +82,22 @@ def login_required(func):
     return wrapper
 
 
+api = Api(
+    title="Databox RESTful API Backend",
+    catch_all_404s=True,
+    decorators=[resp_headers],
+    default="APIs",
+    default_label="click me",
+    version="1.2",
+)
+
+
+class Membership(Enum):
+    Free = 0
+    Basic = 1
+    Premium = 2
+
+
 class ClientServiceType:
     def __init__(self, current_user):
         self.membership_name = current_user.membership.name
@@ -81,18 +111,12 @@ class ClientServiceType:
             return AggregatableTable
 
 
-users_profile_fields = {
-    "first_name": fields.String,
-    "last_name": fields.String,
-    "username": fields.String,
-    "email_address": fields.String,
-    "membership": fields.Integer,
-}
-
-
+@api.route("/home")
 class HomePage(Resource):
-    @prep_resp
     def get(self):
+        """
+        Homepage information for App.
+        """
         resp_data = {
             "title": "Welcome to DataBox!!",
             "applicationfeatures": [
@@ -122,139 +146,50 @@ class HomePage(Resource):
         }
         return {"data": resp_data}
 
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
 
-
+@api.route("/help")
 class Help(Resource):
-    @prep_resp
     def get(self):
-        resp_data = {
-            "To Sign Up User": "curl https://mb9.pythonanywhere.com/signup -d"
-            ' "first_name=<first_name>" -d "last_name=<last_name>" -d'
-            ' "membership=<0|1|2>" -d "username=<username>" -d'
-            ' "email_address=<email_address>" -d "password=<password>"',
-            "To Sign In": "curl https://mb9.pythonanywhere.com/login -X POST -d"
-            ' "username=<username>" -d "password=<password>" -v',
-            "To Log out": 'curl --cookie "session=<session_key>" https://mb9.pythonanywhere.com/logout',
-            "To Checkout featurs": "curl https://mb9.pythonanywhere.com/features",
-            "To See General help": "curl https://mb9.pythonanywhere.com/help",
-            "To See all logged in user based help": "curl https://mb9.pythonanywhere.com/helpcenter",
-            "To make all GET requests in browser type this command to console (<crypt_signed_session_key> can be found from response of `/login`)": "document.cookie = 'session=<crypt_signed_session_key>' # till `;`",
-            "Download Py Script Test This App Functionality": "https://mb9.pythonanywhere.com/script",
-        }
-        return {"data": resp_data}
-
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
-
-
-class HelpCenter(Resource):
-    @login_required
-    @prep_resp
-    def get(self):
-        if not g.current_user:
-            raise LogInRequired
-        username = g.current_user.username
+        """
+        To provide use testing user credential to get started, testing RESTful API on OpenAPI (formerly Swagger).
+        """
         resp = {
-            "To See the User profile": 'curl --cookie "session=<session_key>"'
-            f" https://mb9.pythonanywhere.com/users/{username}/profile",
-            "To Create Database": "curl https://mb9.pythonanywhere.com/users/"
-            f'{username}/databases -X POST --cookie "session=<session_key>" -d '
-            '"title=<title_here>" -d "fields=name:str,age:int"',
-            "To List all Database user has": 'curl --cookie "session=<session_key>'
-            f'" https://mb9.pythonanywhere.com/users/{username}/databases',
-            "To get records in pages": 'curl --cookie "session=<session_key>" '
-            f"https://mb9.pythonanywhere.com/users/{username}/databases?page=<page "
-            "number>&page-size=<items per page>",
-            "To Query database on as many fields": {
-                "command": 'curl --cookie "session=<session_key>" https://mb9.pytho'
-                f"nanywhere.com/users/{username}/databases?<field>-<op>=<value>&<fi"
-                "eld>-<op>=<value>",
-                "Valid `op` are": "(lt, gt, ge, le, eq, ne, sw)",
-                "lt": "Less Than",
-                "gt": "Greater Than",
-                "ge": "Greater Equal",
-                "le": "Less Equal",
-                "eq": "Equal",
-                "ne": "Not Equal",
-                "sw": "Start With",
+            "free_membership": {
+                "username": "user0",
+                "password": "HelloWorld2023!",
             },
-            "To Delete `ALL` Database user has": 'curl --cookie "session=<session_key>" -X DELETE https://mb9.python'
-            f"anywhere.com/users/{username}/databases",
-            "To List all record of Database": 'curl --cookie "session=<session_key>" https://mb9.pythonanywhere.c'
-            f"om/users/{username}/databases/<database>",
-            "To Add record to Database": 'curl --cookie "session=<session_key>" -X POST https://mb9.pythonan'
-            f"ywhere.com/users/{username}/databases/<database>",
-            "To Rename the Database": 'curl --cookie "session=<session_key>" -X PUT https://mb9.pythonany'
-            f"where.com/users/{username}/databases/<database>",
-            "To Delete specific Database": 'curl --cookie "session=<session_key>" -X DELETE https://mb9.python'
-            f"anywhere.com/users/{username}/databases/<database>",
-            "To Get record by Primary key for specific Database": 'curl --cookie "session=<session_key>" https://mb9.pythonanywhere.c'
-            f"om/users/{username}/databases/<database>/<pk_of_record>",
-            "To Delete the record by primary key for specific Database": 'curl --cookie "session=<session_key>" -X DELETE https://mb9.python'
-            f"anywhere.com/users/{username}/databases/<database>/<pk_of_record>",
+            "basic_membership": {
+                "username": "user1",
+                "password": "HelloWorld2023!",
+            },
+            "premium_membership": {
+                "username": "user2",
+                "password": "HelloWorld2023!",
+            },
         }
-        return {"data": resp}
-
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
+        return {"accounts_for_test": resp}
 
 
-class Privileged(Resource):
-    @prep_resp
-    def get(self):
-        return {
-            "data": "To checkout frontend visit https://databox-frontend.s3.amazonaws.com/index.html#/"
-        }
-
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
-
-
+@api.route("/random_user")
 class RandomUser(Resource):
-    @prep_resp
     def get(self):
+        """
+        Random user data generator.
+        """
         return {"data": random_user_generator()}
 
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
 
-
-class Test(Resource):
-    @login_required
-    @prep_resp
-    def get(self):
-        return {"data": {"secret": "This is a Secret!"}}
-
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
-
-
+@api.route("/script")
 class Script(Resource):
-    @prep_resp
     def get(self):
+        """
+        To download a script to test all these features in one go or run what needs to be done. like Jupyter Notebook!
+        """
         downloadables = os.path.join(
-            current_app.root_path, current_app.config["DOWNLOADABLES_FOLDER"]
+            Path(current_app.root_path).parent,
+            current_app.config["DOWNLOADABLES_FOLDER"],
         )
         return send_from_directory(downloadables, "client.py", as_attachment=True)
-
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
 
 
 class User:
@@ -280,11 +215,14 @@ class UserEncoder(JSONEncoder):
         return obj_dict
 
 
+@api.route("/users/<string:username>/profile")
 class UserProfile(Resource):
-    @login_required
-    @is_users_content
-    @prep_resp
+    method_decorators = [is_users_content, login_required]
+
     def get(self, username):
+        """
+        Provides User Profile info. (login required.)
+        """
         users_table = AggregatableTable.access_table("users")
         resp = dict()
         resp["userdata"] = users_table.query(username=username)[0]
@@ -292,33 +230,34 @@ class UserProfile(Resource):
         resp["feature_for_user"] = table._features()
         return {"data": resp}
 
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
+
+signup_parser = reqparse.RequestParser()
+signup_parser.add_argument("first_name", type=str, required=True, location="json")
+signup_parser.add_argument("last_name", type=str, required=True, location="json")
+signup_parser.add_argument(
+    "username", type=username_type, required=True, location="json"
+)
+signup_parser.add_argument("password", type=str, required=True, location="json")
+signup_parser.add_argument(
+    "email_address", type=email_type, required=True, location="json"
+)
+signup_parser.add_argument(
+    "membership",
+    choices=("Premium", "Basic", "Free"),
+    type=str,
+    required=True,
+    location="json",
+)
 
 
+@api.route("/signup")
 class SignUp(Resource):
-    @prep_resp
+    @api.expect(signup_parser)
     def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument("first_name", type=str, required=True, location="json")
-        parser.add_argument("last_name", type=str, required=True, location="json")
-        parser.add_argument(
-            "username", type=username_type, required=True, location="json"
-        )
-        parser.add_argument("password", type=str, required=True, location="json")
-        parser.add_argument(
-            "email_address", type=email_type, required=True, location="json"
-        )
-        parser.add_argument(
-            "membership",
-            choices=("Premium", "Basic", "Free"),
-            type=str,
-            required=True,
-            location="json",
-        )
-        kwargs = parser.parse_args()
+        """
+        Signs user up for service.
+        """
+        kwargs = signup_parser.parse_args()
         attr = getattr(Membership, kwargs["membership"])
         kwargs["membership"] = attr.value
         kwargs["password"] = create_hash_password(kwargs["password"])
@@ -334,33 +273,22 @@ class SignUp(Resource):
         )
         return {"data": UserEncoder().encode(User(kwargs))}
 
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
+
+login_parser = reqparse.RequestParser()
+login_parser.add_argument(
+    "username", type=username_type, required=True, location="json"
+)
+login_parser.add_argument("password", required=True, location="json")
 
 
+@api.route("/login")
 class Login(Resource):
-    @prep_resp
+    @api.expect(login_parser)
     def post(self):
         """
-        parses form field of request with `username` and `password` and checks
-        password. if matched, returns `message` along with `token`. else raises
-        exception.
-
-        Raises:
-            UserDoesNotExist: _description_
-            LogInRequired: _description_
-
-        Returns:
-            _type_: dict()
+        To log user in.
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument(
-            "username", type=username_type, required=True, location="json"
-        )
-        parser.add_argument("password", required=True, location="json")
-        kwargs = parser.parse_args()
+        kwargs = login_parser.parse_args()
         users_table = AggregatableTable.access_table("users")
         user = users_table.query(username=kwargs["username"])
         if not user:
@@ -381,35 +309,42 @@ class Login(Resource):
                 current_app.config.get("SECRET", "mysecretsarehere!@#@"),
                 algorithm="HS256",
             )
-            return {
-                "data": "Login Successful!",
-                "token": token if type(token) == str else token.decode(),
-            }
+            return (
+                {"message": "Login Successful!"},
+                200,
+                {
+                    "Set-Cookie": "token=" + token
+                    if type(token) == str
+                    else token.decode(),
+                },
+            )
         else:
             raise InvalidCredentials
 
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
 
-
+@api.route("/logout")
 class Logout(Resource):
-    @login_required
-    @prep_resp
+    method_decorators = [login_required]
+
     def get(self):
+        """
+        To log out active login session.
+        """
         if g.current_user:
             user = g.current_user
             return {"data": UserEncoder().encode(user)}
         raise InvalidURL
 
 
+@api.route("/features")
 class MembershipFeatures(Resource):
     "This class lists all the features that are set out to be provided among"
     "all 3 classes of membership type."
 
-    @prep_resp
     def get(self):
+        """
+        Lists all the feature that current memberships offer.
+        """
         return {
             "data": {
                 "freefeats": Table._features(),
@@ -418,45 +353,42 @@ class MembershipFeatures(Resource):
             }
         }
 
-    @prep_resp
-    def options(self):
-        resp = make_response()
-        return resp
+
+userdatabases_parser = reqparse.RequestParser()
+userdatabases_parser.add_argument("title", type=str, required=True, location="json")
+userdatabases_parser.add_argument(
+    "fields",
+    type=fields_type,
+    required=True,
+    location="json",
+)
 
 
+@api.route("/users/<string:username>/databases")
 class UserDatabases(Resource):
-    @login_required
-    @is_users_content
-    @prep_resp
+    method_decorators = [is_users_content, login_required]
+
     def get(self, username):
+        """
+        Lists all the database (.txt file) in users account(directory).
+        """
         return {"data": os.listdir(f"database/usernames/{username}")}
 
-    @login_required
-    @is_users_content
-    @prep_resp
     def delete(self, username):
+        """
+        Deletes all database in users account.
+        """
         all_files = os.listdir(f"database/usernames/{username}/")
         for file in all_files:
             os.remove(f"database/usernames/{username}/" + file)
         return {"data": all_files}
 
-    @login_required
-    @is_users_content
-    @prep_resp
+    @api.expect(userdatabases_parser)
     def post(self, username):
         """
-        `fields` has to be like `('field_1:type', 'field_2:type',...)`
-        `title` can be alphanumeric. No special letters are allowed.
+        Created database in users account.
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument("title", type=str, required=True, location="json")
-        parser.add_argument(
-            "fields",
-            type=fields_type,
-            required=True,
-            location="json",
-        )
-        kwargs = parser.parse_args()
+        kwargs = userdatabases_parser.parse_args()
         parsed_fields = tuple(i.lower() for i in kwargs["fields"].split(","))
         table = ClientServiceType(g.current_user).get_table_klass()
         tablename = f"usernames/{username}/{kwargs['title']}"
@@ -466,31 +398,52 @@ class UserDatabases(Resource):
         table(tablename, parsed_fields)
         return {"data": kwargs["title"]}
 
-    @prep_resp
-    def options(self, username):
-        resp = make_response()
-        return resp
+
+database_parser = reqparse.RequestParser()
 
 
+def req_parse_insert_in_database(table):
+    def wrapper(*args, **kwargs):
+        try:
+            for field, field_type in tuple(table.field_format.items())[1:]:
+                if field_type == str:
+                    database_parser.add_argument(
+                        field, type=str_type, required=True, location="json"
+                    )
+                else:
+                    database_parser.add_argument(
+                        field, type=field_type, required=True, location="json"
+                    )
+            kwargs = database_parser.parse_args()
+        except AttributeError:
+            raise UpgradePlan
+        return kwargs
+
+    return wrapper
+
+
+@api.route("/users/<string:username>/databases/<string:database>")
 class UserDatabase(Resource):
-    @login_required
-    @is_users_content
-    @prep_resp
+    method_decorators = [is_users_content, login_required]
+
     def get(self, username, database):
+        """
+        Offers `pagination`, `query parameter search` or lists whole database.
+        """
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
-        qs = request.query_string.decode()
-        if qs:
-            return {"data": Process_QS(qs, table).process()}
+        query_str = request.query_string.decode()
+        if query_str:
+            return {"data": Process_QS(query_str, table).process()}
         try:
             return {"data": table.get_records()}
         except AttributeError:
             raise UpgradePlan
 
-    @login_required
-    @is_users_content
-    @prep_resp
     def put(self, username, database):
+        """
+        Renames database.
+        """
         name = request.json["database"]
         if not (name and re.fullmatch("[a-zA-Z0-9]+", name)):
             raise InvalidFieldValue(
@@ -502,34 +455,40 @@ class UserDatabase(Resource):
         )
         return {"data": name}
 
-    @login_required
-    @is_users_content
-    @prep_resp
     def delete(self, username, database):
-        os.remove(f"database/usernames/{username}/{database}.txt")
-        return {"data": database}
+        """
+        Deletes specified database.
+        """
+        try:
+            os.remove(f"database/usernames/{username}/{database}.txt")
+        except FileNotFoundError:
+            return {"message": "File not found!"}, 400
+        else:
+            return {"data": database}
 
-    @login_required
-    @is_users_content
-    @prep_resp
+    @api.expect(database_parser)
     def post(self, username, database):
+        """
+        Adds Record into specified database.
+        """
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         kwargs = req_parse_insert_in_database(table)
+        import pdb
+
+        pdb.set_trace()
         table.insert(**kwargs)
         return {"data": kwargs}
 
-    @prep_resp
-    def options(self, username, database):
-        resp = make_response()
-        return resp
 
-
+@api.route("/users/<string:username>/databases/<string:database>/<int:pk>")
 class InteracDatabase(Resource):
-    @login_required
-    @is_users_content
-    @prep_resp
+    method_decorators = [is_users_content, login_required]
+
     def get(self, username, database, pk):
+        """
+        Returns specified Record.
+        """
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
@@ -542,10 +501,10 @@ class InteracDatabase(Resource):
             raise NoRecordFound
         return {"data": record}
 
-    @login_required
-    @is_users_content
-    @prep_resp
     def delete(self, username, database, pk):
+        """
+        Deletes specified record.
+        """
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         try:
@@ -555,8 +514,3 @@ class InteracDatabase(Resource):
         except ValueError:
             raise PkIsNotInt
         return {"data": record}
-
-    @prep_resp
-    def options(self, username, database, pk):
-        resp = make_response()
-        return resp

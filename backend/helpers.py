@@ -449,7 +449,7 @@ def fields_type(fields_str):
         return fields_str
     else:
         raise ValueError(
-            "`fields` has to be in this form, `fields=name:type,name1:type1,name2:type2`"
+            "`fields` has to be in this form, `col_name:col_type,col_name1:col_type1,col_name2:col_type2`. Valid types are `int`,`str` and `float`"
         )
 
 
@@ -469,39 +469,3 @@ def str_type(str_values):
         raise ValueError(
             "Str is not valid. It can have all aplhabets, _, ,,.,@,!,(,),[,],@;,:, ."
         )
-
-
-def req_parse_insert_in_database(table):
-    parser = reqparse.RequestParser()
-    try:
-        for field, field_type in tuple(table.field_format.items())[1:]:
-            if field_type == str:
-                parser.add_argument(
-                    field, type=str_type, required=True, location="json"
-                )
-            else:
-                parser.add_argument(
-                    field, type=field_type, required=True, location="json"
-                )
-        kwargs = parser.parse_args()
-    except AttributeError:
-        raise UpgradePlan
-    return kwargs
-
-
-def prep_resp(func):
-    def wrapper(*args, **kargs):
-        rv = func(*args, **kargs)
-        resp = make_response(rv)
-        resp.headers["Access-Control-Allow-Origin"] = current_app.config.get(
-            "ACCESS_CONTROL_ALLOW_ORIGIN"
-        )
-        resp.headers["Access-Control-Allow-Methods"] = "*"
-        resp.headers["Access-Control-Allow-Credentials"] = "true"
-        resp.headers[
-            "Access-Control-Allow-Headers"
-        ] = "Origin, X-Api-Key, X-Requested-With, Accept,Content-Type,Authorization"
-        resp.headers["Content-Type"] = "application/json"
-        return resp
-
-    return wrapper
