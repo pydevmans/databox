@@ -35,11 +35,6 @@ from .gen_response import (
 )
 
 
-class CustomResource(Resource):
-    def options(self):
-        return Response(status="200")
-
-
 def resp_headers(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -95,6 +90,12 @@ api = Api(
     default_label="click me",
     version="1.2",
 )
+
+
+class CustomResource(Resource):
+    @api.hide
+    def options(self):
+        return Response(status=200)
 
 
 class Membership(Enum):
@@ -156,7 +157,7 @@ class HomePage(CustomResource):
 class Help(CustomResource):
     def get(self):
         """
-        To provide use testing user credential to get started, testing RESTful API on OpenAPI (formerly Swagger).
+        Provides user credential for testing RESTful API on OpenAPI (formerly Swagger).
         """
         resp = {
             "free_membership": {
@@ -179,7 +180,7 @@ class Help(CustomResource):
 class RandomUser(CustomResource):
     def get(self):
         """
-        Random user data generator.
+        Generates Random information for User Model.
         """
         return {"data": random_user_generator()}
 
@@ -188,7 +189,7 @@ class RandomUser(CustomResource):
 class Script(CustomResource):
     def get(self):
         """
-        To download a script to test all these features in one go or run what needs to be done. like Jupyter Notebook!
+        To download a script, which has User activily like methods to access backend.
         """
         downloadables = os.path.join(
             Path(current_app.root_path).parent,
@@ -261,7 +262,7 @@ class SignUp(CustomResource):
     @api.expect(signup_parser)
     def post(self):
         """
-        Signs user up for service.
+        To Sign up account.
         """
         kwargs = signup_parser.parse_args()
         attr = getattr(Membership, kwargs["membership"])
@@ -292,7 +293,7 @@ class Login(CustomResource):
     @api.expect(login_parser)
     def post(self):
         """
-        To log user in.
+        To Login to account.
         """
         kwargs = login_parser.parse_args()
         users_table = AggregatableTable.access_table("users")
@@ -334,7 +335,7 @@ class Logout(CustomResource):
 
     def get(self):
         """
-        To log out active login session.
+        To Logout of account.
         """
         if g.current_user:
             user = g.current_user
@@ -344,8 +345,7 @@ class Logout(CustomResource):
 
 @api.route("/features")
 class MembershipFeatures(CustomResource):
-    "This class lists all the features that are set out to be provided among"
-    "all 3 classes of membership type."
+    "List all features which are included with each kind of membership."
 
     def get(self):
         """
@@ -376,13 +376,13 @@ class UserDatabases(CustomResource):
 
     def get(self, username):
         """
-        Lists all the database (.txt file) in users account(directory).
+        Lists all the databases (.txt file) in user's account(directory).
         """
         return {"data": os.listdir(f"database/usernames/{username}")}
 
     def delete(self, username):
         """
-        Deletes all database in users account.
+        Deletes all databases from user's account.
         """
         all_files = os.listdir(f"database/usernames/{username}/")
         for file in all_files:
@@ -392,7 +392,7 @@ class UserDatabases(CustomResource):
     @api.expect(userdatabases_parser)
     def post(self, username):
         """
-        Created database in users account.
+        Creates database in user's account.
         """
         kwargs = userdatabases_parser.parse_args()
         parsed_fields = tuple(i.lower() for i in kwargs["fields"].split(","))
@@ -431,7 +431,7 @@ class UserDatabase(CustomResource):
 
     def get(self, username, database):
         """
-        Offers `pagination`, `query parameter search` or lists whole database.
+        Offers lookup by `pagination`, `query parameter search` or whole database.
         """
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
