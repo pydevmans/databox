@@ -1,26 +1,23 @@
 <template>
+  <h2>This is database view.</h2>
   <div id="features"></div>
 </template>
 
 <style scoped></style>
 
 <script>
-import { defineComponent } from "vue";
-
-export default defineComponent({
-  name: "FeatureView",
+export default {
+  name: "DatabaseView",
   data() {
     return {
       data: "",
     };
   },
   methods: {
-    fetchData() {
-      features().then((resp) => (this.data = resp.data));
-    },
+    fetchData() {},
   },
   created() {
-    this.fetchData();
+    // this.fetchData();
   },
-});
+};
 </script>

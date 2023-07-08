@@ -3,10 +3,39 @@
   <p>Find here all overview of all databases and profile!</p>
   <div id="cont">
     <CardView title="Database">
+      <q-btn label="+" color="primary" @click="prompt = true" />
+
+      <q-dialog v-model="prompt" persistent>
+        <q-card style="min-width: 350px">
+          <q-card-section>
+            <div class="text-h6">Add Database</div>
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <q-input
+              dense
+              v-model="title"
+              autofocus
+              @keyup.enter="prompt = false"
+            />
+            <q-input
+              dense
+              v-model="fields"
+              autofocus
+              @keyup.enter="prompt = false"
+            />
+          </q-card-section>
+
+          <q-card-actions align="right" class="text-primary">
+            <q-btn flat label="Cancel" v-close-popup />
+            <q-btn flat label="Add address" v-close-popup />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
       <ul>
         <template v-for="db in this.databases" v-bind:key="db">
           <li>
-            <a :href="`/users/${this.username}/databases/${db}`">{{ db }}</a>
+            <router-link href="`/databases/${db}`">{{ db }}</router-link>
           </li>
         </template>
       </ul>
@@ -58,8 +87,19 @@ import { viewDatabase, viewProfile } from "../services/Api";
 import { useAuthStore } from "src/stores/auth";
 import { mapState } from "pinia";
 import CardView from "src/components/CardView.vue";
+import { ref } from "vue";
+
 export default {
   name: "TestDashboardView",
+  setup() {
+    return {
+      alert: ref(false),
+      confirm: ref(false),
+      prompt: ref(false),
+
+      address: ref(""),
+    };
+  },
   data() {
     return {
       databases: [],

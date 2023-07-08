@@ -1,5 +1,7 @@
-DEBUG = False
-SECRET_KEY = "h3g4j23h4b23j4j2h3423oih23423@#$%#$% #$t3t43vrc3334crfwefgeger"
+import os
+
+DEBUG = os.environ["DEBUG"]
+SECRET_KEY = os.environ["SECRET_KEY"]
 DOWNLOADABLES_FOLDER = "downloadables"
 COOKIE_TIME_VALIDITY_HOURS = 4
 if DEBUG:

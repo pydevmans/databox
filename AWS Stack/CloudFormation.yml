@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: 'A template to deploy Github project on EC2 machine.'
+
+Parameters:
+  KeyForGH: 
+    Type: String
+    Default: '{{resolve:ssm-secure:KEY_FOR_GITHUB:3}}'
+
+
+Resources:
+  Backend:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      SecurityGroupIds:
+        - sg-0f094658168d4f74b
+      ImageId: ami-04a0ae173da5807d3
+      KeyName: backendkeypair
+      InstanceType: t2.micro
+      SubnetId: subnet-033083c73e528f20c
+      AvailabilityZone: us-east-1a
+      Tags:
+        - Key: Name
+          Value: Databox
+      UserData: !Base64 
+        Fn::Sub:
+          - #!/bin/bash
+          - whoami
+          sudo yum update
+          sudo yum -y install nginx
+          yum -y install git
+          touch ~/.ssh/id_ed25519_github
+          echo $KeyForGH > ~/.ssh/id_ed25519_github
+          cd /usr/share/nginx/html
+          rm index.html
+          git init
+          git config --global --add safe.directory /usr/share/nginx/html
+          git remote add origin git@github.com:chipndell/chipndell.github.io.git
+          git pull origin master
+          sudo systemctl restart nginx.service
+      BlockDeviceMappings:
+      -
+        DeviceName: /dev/xvda
+        Ebs:
+          VolumeSize: 8
