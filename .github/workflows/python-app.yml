@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: ["testing"]
 
+env:
+  DEBUG: True
+
 permissions:
   contents: read
 
