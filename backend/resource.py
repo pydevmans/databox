@@ -247,6 +247,7 @@ signup_parser.add_argument(
     type=str,
     required=True,
     location="json",
+    help="Choices are `Premium`, `Basic` and `Free`.",
 )
 
 
