@@ -8,7 +8,7 @@ from functools import wraps
 from pathlib import Path
 import jwt
 from flask import current_app, g, request, send_from_directory, Response
-from flask_restx import Api, Resource, reqparse
+from flask_restx import Api, Resource, reqparse, cors
 from .helpers import (
     is_users_content,
     create_hash_password,
@@ -33,25 +33,6 @@ from .gen_response import (
     NoRecordFound,
     InvalidCredentials,
 )
-
-
-def resp_headers(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        resp = func(*args, **kwargs)
-        resp.headers.add(
-            "Access-Control-Allow-Headers",
-            "Origin, Accept, Content-Type, Authorization",
-        )
-        resp.headers.add("Access-Control-Allow-Credentials", "true")
-        resp.headers.add("Access-Control-Allow-Methods", "*")
-        resp.headers.add(
-            "Access-Control-Allow-Origin",
-            current_app.config.get("ACCESS_CONTROL_ALLOW_ORIGIN"),
-        )
-        return resp
-
-    return wrapper
 
 
 def login_required(func):
@@ -85,7 +66,6 @@ def login_required(func):
 api = Api(
     title="Databox RESTful API Backend",
     catch_all_404s=True,
-    decorators=[resp_headers],
     default="APIs",
     default_label="click me",
     version="1.2",
@@ -93,6 +73,14 @@ api = Api(
 
 
 class CustomResource(Resource):
+    decorators = [
+        cors.crossdomain(
+            origin=os.environ["ACCESS_CONTROL_ALLOW_ORIGIN"],
+            expose_headers=["Origin, Accept, Content-Type, Authorization"],
+            methods=["OPTIONS", "GET", "HEAD", "PUT", "POST", "DELETE"],
+        )
+    ]
+
     @api.hide
     def options(self):
         return Response(status=200)
