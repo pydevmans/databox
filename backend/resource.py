@@ -370,7 +370,7 @@ class MembershipFeatures(CustomResource):
 
     def get(self):
         """
-        Lists all the feature that current memberships offer.
+        Lists all the feature that current membership's offer.
         """
         return {
             "data": {
