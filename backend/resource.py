@@ -67,7 +67,7 @@ api = Api(
     title="Databox RESTful API Backend",
     catch_all_404s=True,
     default="APIs",
-    default_label="click me",
+    default_label="click me!",
     version="1.2",
 )
 
