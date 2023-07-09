@@ -7,7 +7,7 @@ from flask import Response
 app = create_app()
 
 
-@app.route("/deploy")
+@app.route("/deploy", methods=["GET", "HEAD", "POST", "OPTIONS"])
 def deploy():
     server_hash = (
         subprocess.check_output("git -C ~/app log -1 --pretty=format:%H", shell=True)
