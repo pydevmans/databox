@@ -26,9 +26,9 @@ def deploy():
         subprocess.check_output(
             "touch /var/www/mb9_pythonanywhere_com_wsgi.py", shell=True
         )
-        return Response("<p>Good Job!</p>", status=200)
-    return Response(status=403)
+        return Response("Deploy done", status=200)
+    return Response("No deploy needed.", status=403)
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
