@@ -145,7 +145,7 @@ class HomePage(CustomResource):
 class Help(CustomResource):
     def get(self):
         """
-        Provides user credential for testing RESTful API on OpenAPI (formerly Swagger).
+        Provides user credential for testing RESTful API.
         """
         resp = {
             "free_membership": {
