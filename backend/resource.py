@@ -8,7 +8,7 @@ from functools import wraps
 from pathlib import Path
 import jwt
 from flask import current_app, g, request, send_from_directory, Response
-from flask_restx import Api, Resource, reqparse, cors
+from flask_restx import Api, Resource, reqparse, cors, fields
 from .helpers import (
     is_users_content,
     create_hash_password,
@@ -209,20 +209,53 @@ class UserEncoder(JSONEncoder):
         return obj_dict
 
 
+userprofile = api.model(
+    "Userprofile",
+    {
+        "feature_for_user": fields.Nested(
+            api.model(
+                "feats",
+                {
+                    "database_limit": fields.Integer,
+                    "feat": fields.List(fields.String),
+                },
+            )
+        ),
+        "userdata": fields.List(
+            fields.Nested(
+                api.model(
+                    "User",
+                    {
+                        "pk": fields.Integer,
+                        "first_name": fields.String,
+                        "last_name": fields.String,
+                        "username": fields.String,
+                        # "password": fields.String,
+                        "email_address": fields.String,
+                        "membership": fields.Integer,
+                    },
+                )
+            )
+        ),
+    },
+)
+
+
 @api.route("/users/<string:username>/profile")
 class UserProfile(CustomResource):
     method_decorators = [is_users_content, login_required]
 
+    @api.marshal_with(userprofile)
     def get(self, username):
         """
         Provides User Profile info. (login required.)
         """
         users_table = AggregatableTable.access_table("users")
         resp = dict()
-        resp["userdata"] = users_table.query(username=username)[0]
+        resp["userdata"] = users_table.query(username=username)[0]._asdict()
         table = ClientServiceType(g.current_user).get_table_klass()
         resp["feature_for_user"] = table._features()
-        return {"data": resp}
+        return resp
 
 
 signup_parser = reqparse.RequestParser()
