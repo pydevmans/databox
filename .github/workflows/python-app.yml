@@ -9,9 +9,6 @@ on:
   pull_request:
     branches: ["testing"]
 
-env:
-  SECRET_KEY: ${{ secrets.SECRET_KEY }}
-  DEBUG: True
 
 permissions:
   contents: read
@@ -20,6 +17,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DEBUG: False
+      ACCESS_CONTROL_ALLOW_ORIGIN: https://databox-frontend.s3.amazonaws.com
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.10
