@@ -1,5 +1,14 @@
 from datetime import timedelta, datetime
-from .application import api
+from flask_restx import Api
+
+api = Api(
+    title="Databox RESTful API Backend",
+    catch_all_404s=True,
+    default="APIs",
+    default_label="click me!",
+    version="1.2",
+)
+
 from .gen_response import (
     InvalidPropException,
     NotAValidFieldType,

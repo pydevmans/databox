@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from enum import Enum
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -7,8 +8,9 @@ from json import JSONEncoder
 from functools import wraps
 from pathlib import Path
 import jwt
+from typing import Dict, List
 from flask import current_app, g, request, send_from_directory, Response
-from flask_restx import Api, Resource, reqparse, cors, fields
+from flask_restx import Resource, reqparse, cors, fields, marshal_with
 from .helpers import (
     is_users_content,
     create_hash_password,
@@ -33,6 +35,32 @@ from .gen_response import (
     NoRecordFound,
     InvalidCredentials,
 )
+from .api_data_model import (
+    feats,
+    homepage,
+    membership,
+    accounts_for_test,
+    help,
+    user,
+    userprofile,
+    signup,
+    signup_parser,
+    login_parser,
+    features,
+    userdatabases_parser,
+    getUserDatabases,
+    deleteUserDatabases,
+    postUserDatabases,
+    database_parser,
+    getUserDatabase,
+    deleteUserDatabase,
+    postUserDatabase,
+    putUserDatabase,
+    getInteracDatabase,
+    deleteInteracDatabase,
+)
+
+from backend import api
 
 
 def login_required(func):
@@ -61,15 +89,6 @@ def login_required(func):
         return func(*args, **kwargs)
 
     return wrapper
-
-
-api = Api(
-    title="Databox RESTful API Backend",
-    catch_all_404s=True,
-    default="APIs",
-    default_label="click me!",
-    version="1.2",
-)
 
 
 class CustomResource(Resource):
@@ -107,6 +126,7 @@ class ClientServiceType:
 
 @api.route("/home")
 class HomePage(CustomResource):
+    @api.marshal_with(homepage)
     def get(self):
         """
         Homepage information for App.
@@ -138,11 +158,12 @@ class HomePage(CustomResource):
             "For General help": "visit https://mb9.pythonanywhere.com/help",
             "For Logged in User based help": "visit https://mb9.pythonanywhere.com/helpcenter",
         }
-        return {"data": resp_data}
+        return resp_data
 
 
 @api.route("/help")
 class Help(CustomResource):
+    @api.marshal_with(help)
     def get(self):
         """
         Provides user credential for testing RESTful API.
@@ -166,11 +187,12 @@ class Help(CustomResource):
 
 @api.route("/random_user")
 class RandomUser(CustomResource):
+    @api.marshal_with(user)
     def get(self):
         """
         Generates Random information for User Model.
         """
-        return {"data": random_user_generator()}
+        return random_user_generator()
 
 
 @api.route("/script")
@@ -209,38 +231,6 @@ class UserEncoder(JSONEncoder):
         return obj_dict
 
 
-userprofile = api.model(
-    "Userprofile",
-    {
-        "feature_for_user": fields.Nested(
-            api.model(
-                "feats",
-                {
-                    "database_limit": fields.Integer,
-                    "feat": fields.List(fields.String),
-                },
-            )
-        ),
-        "userdata": fields.List(
-            fields.Nested(
-                api.model(
-                    "User",
-                    {
-                        "pk": fields.Integer,
-                        "first_name": fields.String,
-                        "last_name": fields.String,
-                        "username": fields.String,
-                        # "password": fields.String,
-                        "email_address": fields.String,
-                        "membership": fields.Integer,
-                    },
-                )
-            )
-        ),
-    },
-)
-
-
 @api.route("/users/<string:username>/profile")
 class UserProfile(CustomResource):
     method_decorators = [is_users_content, login_required]
@@ -258,29 +248,10 @@ class UserProfile(CustomResource):
         return resp
 
 
-signup_parser = reqparse.RequestParser()
-signup_parser.add_argument("first_name", type=str, required=True, location="json")
-signup_parser.add_argument("last_name", type=str, required=True, location="json")
-signup_parser.add_argument(
-    "username", type=username_type, required=True, location="json"
-)
-signup_parser.add_argument("password", type=str, required=True, location="json")
-signup_parser.add_argument(
-    "email_address", type=email_type, required=True, location="json"
-)
-signup_parser.add_argument(
-    "membership",
-    choices=("Premium", "Basic", "Free"),
-    type=str,
-    required=True,
-    location="json",
-    help="Choices are `Premium`, `Basic` and `Free`.",
-)
-
-
 @api.route("/signup")
 class SignUp(CustomResource):
     @api.expect(signup_parser)
+    # @api.marshal_with(signup)
     def post(self):
         """
         To Sign up account.
@@ -300,13 +271,6 @@ class SignUp(CustomResource):
             f"database/usernames/{kwargs['username']}",
         )
         return {"data": UserEncoder().encode(User(kwargs))}
-
-
-login_parser = reqparse.RequestParser()
-login_parser.add_argument(
-    "username", type=username_type, required=True, location="json"
-)
-login_parser.add_argument("password", required=True, location="json")
 
 
 @api.route("/login")
@@ -368,39 +332,30 @@ class Logout(CustomResource):
 class MembershipFeatures(CustomResource):
     "List all features which are included with each kind of membership."
 
+    @api.marshal_with(features)
     def get(self):
         """
         Lists all the feature that current membership's offer.
         """
         return {
-            "data": {
-                "freefeats": Table._features(),
-                "basicfeats": FormattedTable._features(),
-                "premiumfeats": AggregatableTable._features(),
-            }
+            "freefeats": Table._features(),
+            "basicfeats": FormattedTable._features(),
+            "premiumfeats": AggregatableTable._features(),
         }
-
-
-userdatabases_parser = reqparse.RequestParser()
-userdatabases_parser.add_argument("title", type=str, required=True, location="json")
-userdatabases_parser.add_argument(
-    "fields",
-    type=fields_type,
-    required=True,
-    location="json",
-)
 
 
 @api.route("/users/<string:username>/databases")
 class UserDatabases(CustomResource):
     method_decorators = [is_users_content, login_required]
 
+    @api.marshal_with(getUserDatabases)
     def get(self, username):
         """
-        Lists all the databases (.txt file) in user's account(directory).
+        Lists all the databases
         """
         return {"data": os.listdir(f"database/usernames/{username}")}
 
+    @api.marshal_with(deleteUserDatabases)
     def delete(self, username):
         """
         Deletes all databases from user's account.
@@ -426,26 +381,6 @@ class UserDatabases(CustomResource):
         return {"data": kwargs["title"]}
 
 
-database_parser = reqparse.RequestParser()
-
-
-def req_parse_insert_in_database(table):
-    try:
-        for field, field_type in tuple(table.field_format.items())[1:]:
-            if field_type == str:
-                database_parser.add_argument(
-                    field, type=str_type, required=True, location="json"
-                )
-            else:
-                database_parser.add_argument(
-                    field, type=field_type, required=True, location="json"
-                )
-        kwargs = database_parser.parse_args()
-    except AttributeError:
-        raise UpgradePlan
-    return kwargs
-
-
 @api.route("/users/<string:username>/databases/<string:database>")
 class UserDatabase(CustomResource):
     method_decorators = [is_users_content, login_required]
@@ -464,6 +399,7 @@ class UserDatabase(CustomResource):
         except AttributeError:
             raise UpgradePlan
 
+    @api.expect(database_parser)
     def put(self, username, database):
         """
         Renames database.
@@ -479,6 +415,7 @@ class UserDatabase(CustomResource):
         )
         return {"data": name}
 
+    @api.marshal_with(deleteUserDatabase)
     def delete(self, username, database):
         """
         Deletes specified database.
@@ -490,6 +427,7 @@ class UserDatabase(CustomResource):
         else:
             return {"data": database}
 
+    @api.marshal_with(postUserDatabase)
     @api.expect(database_parser)
     def post(self, username, database):
         """
@@ -497,8 +435,8 @@ class UserDatabase(CustomResource):
         """
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
-        parsed_kwargs = req_parse_insert_in_database(table)
-        table.insert(**parsed_kwargs)
+        parsed_kwargs = database_parser.parse_args()
+        table.insert(**json.loads(parsed_kwargs["data_field"]))
         return {"data": parsed_kwargs}
 
 
@@ -506,6 +444,7 @@ class UserDatabase(CustomResource):
 class InteracDatabase(CustomResource):
     method_decorators = [is_users_content, login_required]
 
+    @api.marshal_with(getInteracDatabase)
     def get(self, username, database, pk):
         """
         Returns specified Record.
@@ -522,6 +461,7 @@ class InteracDatabase(CustomResource):
             raise NoRecordFound
         return {"data": record}
 
+    @api.marshal_with(deleteInteracDatabase)
     def delete(self, username, database, pk):
         """
         Deletes specified record.

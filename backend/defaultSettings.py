@@ -8,3 +8,4 @@ if DEBUG:
     ACCESS_CONTROL_ALLOW_ORIGIN = "http://127.0.0.1:9000"
 else:
     ACCESS_CONTROL_ALLOW_ORIGIN = "https://databox-frontend.s3.amazonaws.com"
+RESTX_MASK_SWAGGER = False

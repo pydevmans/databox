@@ -37,10 +37,10 @@ def logged_user_client(tclient):
 
 def test_homepage(tclient):
     res1 = tclient.get("/home")
-    assert "title" in res1.json["data"]
-    assert "applicationfeatures" in res1.json["data"]
-    assert "keyhighlights" in res1.json["data"]
-    assert "techstacks" in res1.json["data"]
+    assert "title" in res1.json
+    assert "applicationfeatures" in res1.json
+    assert "keyhighlights" in res1.json
+    assert "techstacks" in res1.json
 
 
 def test_userprofile(logged_user_client):
@@ -214,7 +214,6 @@ def test_userdatabases_loggedout(tclient):
     post_res = tclient.post("/users/user/databases")
     assert post_res.status_code != 200
 
-    # def test_user_database_loggedout(tclient):
     get_res = tclient.get("/users/user/databases/test")
     assert get_res.status_code != 200
     put_res = tclient.put(
