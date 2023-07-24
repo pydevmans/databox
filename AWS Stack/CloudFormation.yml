@@ -13,12 +13,12 @@ Resources:
     Type: 'AWS::EC2::Instance'
     Properties:
       SecurityGroupIds:
-        - sg-0f094658168d4f74b
-      ImageId: ami-04a0ae173da5807d3
-      KeyName: backendkeypair
-      InstanceType: t2.micro
-      SubnetId: subnet-033083c73e528f20c
-      AvailabilityZone: us-east-1a
+        - SECURITYGROUPIDS
+      ImageId: IMAGEID
+      KeyName: KEYNAME
+      InstanceType: INSTANCETYPE
+      SubnetId: SUBNETID
+      AvailabilityZone: AVAILABILITYZONE
       Tags:
         - Key: Name
           Value: Databox
