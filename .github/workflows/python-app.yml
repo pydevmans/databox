@@ -12,6 +12,7 @@ on:
 env:
   SECRET_KEY: ${{ secrets.SECRET_KEY }}
   DEBUG: True
+  ACCESS_CONTROL_ALLOW_ORIGIN: https://databox-frontend.s3.amazonaws.com
 
 permissions:
   contents: read
