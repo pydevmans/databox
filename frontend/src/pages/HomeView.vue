@@ -10,7 +10,7 @@ export default defineComponent({
   },
   methods: {
     fetchHome() {
-      home().then((resp) => (this.data = resp.data.data));
+      home().then((resp) => (this.data = resp.data));
     },
   },
   created() {
@@ -41,7 +41,8 @@ export default defineComponent({
       </li>
     </ul>
     <div id="help">
-      <p>For general help: <RouterLink to="/help">Help</RouterLink></p>
+      <p>For general help: <RouterLink to="/help">Help</RouterLink>
+      </p>
       <p>
         For logged in user related help:
         <RouterLink to="/helpcenter">Help Center</RouterLink>

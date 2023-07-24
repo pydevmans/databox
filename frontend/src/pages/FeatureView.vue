@@ -59,6 +59,7 @@
   min-height: 89vh;
   flex-direction: row;
 }
+
 h4 {
   text-align: center;
 }
@@ -66,6 +67,7 @@ h4 {
 .product ul {
   list-style-type: none;
 }
+
 .product1 li::before {
   content: "✅ ";
 }
@@ -77,6 +79,7 @@ h4 {
 .product3 li::before {
   content: "🚀 ";
 }
+
 li {
   font-size: large;
 }
@@ -105,7 +108,7 @@ export default defineComponent({
   },
   methods: {
     fetchData() {
-      features().then((resp) => (this.data = resp.data));
+      features().then((resp) => (this.data = resp));
     },
   },
   created() {
