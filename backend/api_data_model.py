@@ -17,6 +17,7 @@ feats = api.model(
     "feats",
     {
         "database_limit": fields.Integer,
+        "record_limit": fields.Integer,
         "feat": fields.List(fields.String),
     },
 )
