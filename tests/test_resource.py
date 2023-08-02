@@ -4,7 +4,7 @@ import shutil
 import pytest
 from app import app
 from math import ceil
-from backend import random_user_generator
+from backend.helpers import random_user_generator
 from flask import g
 
 

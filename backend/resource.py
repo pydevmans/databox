@@ -1,5 +1,6 @@
 import os
 import re
+import jwt
 import json
 from enum import Enum
 from copy import deepcopy
@@ -7,18 +8,12 @@ from datetime import datetime, timedelta
 from json import JSONEncoder
 from functools import wraps
 from pathlib import Path
-import jwt
-from typing import Dict, List
 from flask import current_app, g, request, send_from_directory, Response
-from flask_restx import Resource, reqparse, cors, fields, marshal_with
+from flask_restx import Api, cors, Resource
 from .helpers import (
     is_users_content,
     create_hash_password,
     random_user_generator,
-    str_type,
-    username_type,
-    fields_type,
-    email_type,
     check_password,
 )
 from .core import AggregatableTable, FormattedTable, Process_QS, Table
@@ -35,32 +30,32 @@ from .gen_response import (
     NoRecordFound,
     InvalidCredentials,
 )
+
+api = Api(
+    title="Databox RESTful API Backend",
+    catch_all_404s=True,
+    default="APIs",
+    default_label="click me!",
+    version="1.2",
+)
+
 from .api_data_model import (
-    feats,
     homepage,
-    membership,
-    accounts_for_test,
-    help,
+    help_model,
     user,
     userprofile,
-    signup,
     signup_parser,
     login_parser,
     features,
     userdatabases_parser,
     getUserDatabases,
     deleteUserDatabases,
-    postUserDatabases,
     database_parser,
-    getUserDatabase,
     deleteUserDatabase,
     postUserDatabase,
-    putUserDatabase,
     getInteracDatabase,
     deleteInteracDatabase,
 )
-
-from backend import api
 
 
 def login_required(func):
@@ -134,20 +129,25 @@ class HomePage(CustomResource):
         resp_data = {
             "title": "Welcome to DataBox!!",
             "applicationfeatures": [
-                "Relational Database style `CRD` performant file based Database service",
+                "Relational Database style `CRD` performant file based Database"
+                " service",
                 "int, str, float field types, list and dict are work in process",
                 "3 types of Membership to access Service",
                 "RESTful API Endpoint to utilize service",
                 "Responses are in JSON, hence Incorporable with Any Tech Stack",
                 "Containerised light weight application",
                 "~90% of the test coverage with unittest and application testing",
-                "The 'user' database of this application is using this database service.",
+                "The 'user' database of this application is using this database"
+                " service.",
             ],
             "keyhighlights": [
                 "~Constant memory utilisation regardless of size of the database",
-                "~Linear time Lookup on many fields of record regardless of size of the database",
-                "~Linear time lookup with Primary Key or Pagination regardless of size of the database",
-                "Efficient Aggregation with as many criteria upon any/many field(s) of database",
+                "~Linear time Lookup on many fields of record regardless of size of "
+                "the database",
+                "~Linear time lookup with Primary Key or Pagination regardless of size"
+                " of the database",
+                "Efficient Aggregation with as many criteria upon any/many field(s) of"
+                " database",
             ],
             "techstacks": [
                 "Flask",
@@ -156,14 +156,15 @@ class HomePage(CustomResource):
                 "pytest",
             ],
             "For General help": "visit https://mb9.pythonanywhere.com/help",
-            "For Logged in User based help": "visit https://mb9.pythonanywhere.com/helpcenter",
+            "For Logged in User based help": "visit https://mb9.pythonanywhere.com/"
+            "helpcenter",
         }
         return resp_data
 
 
 @api.route("/help")
 class Help(CustomResource):
-    @api.marshal_with(help)
+    @api.marshal_with(help_model)
     def get(self):
         """
         Provides user credential for testing RESTful API.

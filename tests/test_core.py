@@ -2,23 +2,27 @@ import os
 import pytest
 import shutil
 import unittest
-from backend import (
-    random_user_generator,
-    generic_open,
-    AggregatableTable,
-    Paginator,
-    Process_QS,
-    FormattedTable,
-    Table,
-    InvalidQueryString,
-    TypeDoesntConfirmDefination,
-    PageNotPassed,
-    InvalidFieldName,
-    NotAValidFieldType,
-)
 from math import ceil
 from operator import gt, ge, le
 from werkzeug.exceptions import HTTPException
+
+from backend.helpers import (
+    random_user_generator,
+    generic_open,
+)
+from backend.core import (
+    Table,
+    FormattedTable,
+    AggregatableTable,
+    Paginator,
+    Process_QS,
+)
+from backend.gen_response import (
+    InvalidFieldName,
+    NotAValidFieldType,
+    PageNotPassed,
+    InvalidQueryString,
+)
 
 
 class TestTable(unittest.TestCase):
@@ -43,7 +47,8 @@ class TestTable(unittest.TestCase):
         del self.user
 
     def test_title(self):
-        title_on_test_data = "pk:int|first_name:str|last_name:str|age:str|address:str|telephone:int|phone:int|email:str\n"
+        title_on_test_data = "pk:int|first_name:str|last_name:str|age:str|address:\
+str|telephone:int|phone:int|email:str\n"
         with generic_open(self.t.filelocation, mode="r") as file:
             title_on_file = file.readline()
             self.assertEqual(title_on_file, title_on_test_data)
@@ -363,9 +368,9 @@ class Test_Process_QS_URL_Search_Param(unittest.TestCase):
         assert all([le(i.age, 55) for i in output])
 
     def test_process_1(self):
-        # garbage_qs = "name-joe&age>23"
-        # with self.assertRaises(InvalidQueryString):
-        #     Process_QS(garbage_qs, self.t).process()["message"]
+        garbage_qs = "name-joe&age>23"
+        with self.assertRaises(InvalidQueryString):
+            Process_QS(garbage_qs, self.t).process()["message"]
 
         with self.assertRaises(InvalidFieldName):
             qs = "name=joe&age==23"
