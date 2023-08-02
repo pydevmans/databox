@@ -42,5 +42,5 @@ frontend/*.sln
 
 # Allow
 !database/users.txt
-!database/usernames/user/profiles.txt
-!database/usernames/user/backup.txt
+!database/usernames/user{0..2}/profiles.txt
+!database/usernames/user{0..2}/backup.txt
