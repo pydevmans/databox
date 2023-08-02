@@ -4,7 +4,7 @@ import shutil
 import pytest
 from app import app
 from math import ceil
-from backend import random_user_generator
+from backend.helpers import random_user_generator
 from flask import g
 
 
@@ -163,9 +163,9 @@ def test_user_database(logged_user_client):
         f"/users/{username}/databases/test?page={page}&page-size={page_size}",
     )
     assert get_res1.status_code == 200
-    assert get_res1.json["data"]["last"] == ceil(31 / page_size)
-    assert get_res1.json["data"]["prev"] == page - 1
-    assert len(get_res1.json["data"]["data"]) == page_size
+    assert get_res1.json["last"] == ceil(31 / page_size)
+    assert get_res1.json["prev"] == page - 1
+    assert len(get_res1.json["data"]) == page_size
 
     get_res2 = logged_user_client.get(f"/users/{username}/databases/nodatabases")
     assert get_res2.status_code != 200

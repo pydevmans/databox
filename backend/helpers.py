@@ -1,13 +1,12 @@
 import re
+import os
 import random
 import hashlib
-from .gen_response import InvalidURL, UpgradePlan
+from .gen_response import InvalidURL
 
-from abc import ABC, abstractmethod
 from functools import reduce
-from flask import make_response, current_app, g
+from flask import g
 
-from flask_restx import reqparse
 from werkzeug.exceptions import Locked
 
 CAPITAL_LETTERS = (65, 90)
@@ -246,7 +245,13 @@ PROVINCE_SET = (
     "Wyoming",
 )
 
-EMAIL_SET = ("@icloud.com", "@gmail.com", "@yahoo.com", "@protonmail.com", "@live.com")
+EMAIL_SET = (
+    "@icloud.com",
+    "@gmail.com",
+    "@yahoo.com",
+    "@protonmail.com",
+    "@live.com",
+)
 
 FIRST_NAME_SET = (
     "Luke",
@@ -364,7 +369,7 @@ def random_user_generator():
 
 
 def create_hash_password(password):
-    salt = b"\x1f\xd4\xb3\xbe\xa0\xe5\xe7\xc3\x92\x15\x13\x88;\x04\xf1\x140\xc4\xd8N\x99\xd6\x96\x06\xb7\xaf\xd9u\xed\x18\xf84"
+    salt = os.environ["SALT"].encode()
     hash = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100000)
     key = (salt + hash).hex()
     return key
@@ -379,7 +384,7 @@ def check_password(password, hash_orig_password):
 
 def sw(value, pattern):
     try:
-        if value.startswith(pattern):
+        if value.lower().startswith(pattern.lower()):
             return True
     except AttributeError:
         if str(value).startswith(str(pattern)):
@@ -410,17 +415,6 @@ def is_users_content(func):
     return wrapper
 
 
-class CustomDataType(ABC):
-    @abstractmethod
-    def process():
-        pass
-
-
-class unique_string(CustomDataType):
-    def process1():
-        pass
-
-
 def generic_open(filename, mode):
     try:
         return open(filename, mode=mode)
@@ -439,9 +433,7 @@ def username_type(username_str):
     if re.fullmatch("[a-z0-9]{5,10}", username_str):
         return username_str
     else:
-        raise ValueError(
-            "Username has to start with Alphabet and may be aplhanumeric and 5-10 chars long."
-        )
+        raise ValueError("Username has to be aplphanumeric and 5-10 chars long.")
 
 
 def fields_type(fields_str):
@@ -449,23 +441,17 @@ def fields_type(fields_str):
         return fields_str
     else:
         raise ValueError(
-            "`fields` has to be in this form, `col_name:col_type,col_name1:col_type1,col_name2:col_type2`. Valid types are `int`,`str` and `float`"
+            "`fields` has to be in this form, `col_name:col_type,col_name1:"
+            "col_type1,col_name2:col_type2`. Valid types are `int`,`str` and"
+            " `float`"
         )
 
 
 def email_type(email_str):
-    if re.fullmatch("[a-z0-9.]{5,32}@[a-z]{3,32}.[a-z0-9]{1,16}", email_str):
+    if re.fullmatch("[a-z0-9.]{5,32}@[a-z]{3,32}.[a-z]{1,16}", email_str):
         return email_str
     else:
         raise ValueError(
-            "Email is not valid!! It has to be `(5-32 letters)@(3-32 letters).(1-16 letters)`"
-        )
-
-
-def str_type(str_values):
-    if re.fullmatch("[\w ,.@!':;\(\)\[\]]{0,256}", str_values):
-        return str_values
-    else:
-        raise ValueError(
-            "Str is not valid. It can have all aplhabets, _, ,,.,@,!,(,),[,],@;,:, ."
+            "Email is not valid!! It has to be `(5-32 alphanumeric letters)@(3-32 "
+            "alphabet letters).(1-16 alphabet letters)`"
         )

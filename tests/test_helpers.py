@@ -1,4 +1,4 @@
-from backend import create_hash_password, check_password
+from backend.helpers import create_hash_password, check_password
 
 
 def test_check_password():

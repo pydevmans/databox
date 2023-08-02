@@ -1,11 +1,10 @@
-from backend import api
-from flask_restx import reqparse, fields
+from .resource import api
 from .helpers import (
-    str_type,
     username_type,
     fields_type,
     email_type,
 )
+from flask_restx import reqparse, fields
 
 
 class FieldTuple(fields.Raw):
@@ -45,7 +44,7 @@ accounts_for_test = api.model(
         "premium_membership": fields.Nested(membership),
     },
 )
-help = api.model("Help", {"accounts_for_test": fields.Nested(accounts_for_test)})
+help_model = api.model("Help", {"accounts_for_test": fields.Nested(accounts_for_test)})
 
 user = api.model(
     "RandomUserData",
@@ -155,7 +154,7 @@ postUserDatabases = api.model("PostUserDatabases", {"data": fields.String})
 
 
 database_parser = reqparse.RequestParser()
-database_parser.add_argument("data_field", type=str, required=True, location="form")
+database_parser.add_argument("data", type=dict, required=True, location="json")
 
 
 getUserDatabase = api.model("GetUserDatabase", {"data": fields.Wildcard(fields.String)})

@@ -70,7 +70,7 @@ class Table:
     @staticmethod
     def _features():
         """
-        This method is used to update membership features to inform end-users of product.
+        This method is used to update membership features to inform users of service.
         """
         return {
             "feat": ["Relational Database", "insert method to insert record"],
@@ -114,7 +114,7 @@ class Table:
 class Paginator:
     def __init__(self, table, page, items_on_page=5):
         """
-        Page for Paginator starts from `1` to the last page where last record can be found.
+        Page for Paginator starts from `1` to last page where last record can be found.
         """
         self.table = table
         self.current_page = page
@@ -216,7 +216,7 @@ class FormattedTable(Table):
     def _type_compliable(self, **kwargs):
         for fields in tuple(self.field_format.keys())[1:]:
             try:
-                if type(kwargs[fields]) == self.field_format[fields]:
+                if isinstance(kwargs[fields], self.field_format[fields]):
                     pass
                 else:
                     kwargs[fields] = self.field_format[fields](kwargs[fields])
@@ -228,7 +228,7 @@ class FormattedTable(Table):
     @staticmethod
     def _features():
         """
-        This method is used to update membership features to inform end-users of product.
+        This method is used to update membership features to inform users of product.
         """
         parent_feat = Table._features()
         table_feat = {
@@ -236,7 +236,8 @@ class FormattedTable(Table):
                 "Type Compliant Database",
                 "query method to lookup by one field",
                 "delete method to delete record by `pk`",
-                # "Generator based memory-efficient and faster lookup and quering on multiple fields O(nlogn)",
+                "Generator based memory-efficient and faster lookup and quering"
+                " on multiple fields O(nlogn)",
             ],
             "database_limit": FormattedTable.limit_database,
             "record_limit": FormattedTable.limit_records,
@@ -254,13 +255,20 @@ class FormattedTable(Table):
             if line.strip() != ""
         )
         cols = (line.split("|") for line in lines)
-        next(lines)  # title_record
+        next(lines)  # Ommiting title_record
         types = tuple(self.field_format.values())
-        casted_args = (
-            [types[index](item) for index, item in enumerate(value)] for value in cols
-        )
+
         obj = namedtuple(self.tablename, tuple(self.field_format.keys()))
-        return (obj(*i) for i in casted_args)
+
+        def object_generator():
+            "To create object with field values casted to type defined."
+            for value in cols:
+                argu = []
+                for index, item in enumerate(value):
+                    argu.append(types[index](item))
+                yield obj(*argu)
+
+        return (obj for obj in object_generator())
 
     def read(self):
         return list(self._read())
@@ -340,7 +348,7 @@ class FormattedTable(Table):
 
 class AggregateOperations:
     def __init__(self):
-        self.ops = dict()
+        self.ops = []
 
     def add_operation(self, field, value=0, op="eq"):
         """
@@ -348,14 +356,11 @@ class AggregateOperations:
         `str` data type. For specific Operations, raise specific errors
         to inform users of how use specific operation.
         """
-        if self.ops.get(field):
-            self.ops[field].append({"value": value, "op": op})
-        else:
-            self.ops.update({field: [{"value": value, "op": op}]})
+        self.ops.append((field, value, op))
         return self
 
     def clear(self):
-        self.ops = dict()
+        self.ops = []
 
 
 class AggregatableTable(FormattedTable):
@@ -380,36 +385,27 @@ class AggregatableTable(FormattedTable):
             "sw": sw,
             "in": _in,
         }
-        do_process_record = False
-        # this for loop gets all `field`, `op` has provided to process
-        for field_key, field_aggr_value in self.aggregate.ops.items():
-            # this for loop performs all `Operation`s needed to be perform on
-            # field of records
-            for op in field_aggr_value:
-                if (
-                    hashmap_operation[op["op"]](getattr(record, field_key), op["value"])
-                    is True
-                ):
-                    do_process_record = True
-                    continue
-                else:
-                    do_process_record = False
-                    break
-            if do_process_record is False:
+        passed = True
+        for f, v, o in self.aggregate.ops:
+            if hashmap_operation[o](getattr(record, f), v):
+                continue
+            else:
+                passed = False
                 break
-        if do_process_record:
-            return True
-        return False
+        if not passed:
+            return False
+        return True
 
     @staticmethod
     def _features():
         """
-        This method is used to update membership features to inform end-users of product.
+        This method is used to update membership features to inform users of product.
         """
         parent_feat = FormattedTable._features()
         table_feat = {
             "feat": [
-                "Generator based memory-efficient and faster lookup and quering on multiple fields O(nlogn)",
+                "Generator based memory-efficient and faster lookup and quering on"
+                " multiple fields O(nlogn)",
             ],
             "database_limit": AggregatableTable.limit_database,
             "record_limit": AggregatableTable.limit_records,
@@ -469,7 +465,7 @@ class Process_QS:
                 raise InvalidFieldName
             except AttributeError:
                 raise UpgradePlan()
-        return self.table.execute()
+        return {"data": self.table.execute()}
 
     def process_pagination(self):
         query_param_kv = dict()
