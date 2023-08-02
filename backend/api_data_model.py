@@ -154,7 +154,7 @@ postUserDatabases = api.model("PostUserDatabases", {"data": fields.String})
 
 
 database_parser = reqparse.RequestParser()
-database_parser.add_argument("data_field", type=str, required=True, location="form")
+database_parser.add_argument("data", type=dict, required=True, location="json")
 
 
 getUserDatabase = api.model("GetUserDatabase", {"data": fields.Wildcard(fields.String)})

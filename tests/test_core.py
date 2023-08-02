@@ -225,6 +225,10 @@ class TestAggregatableTable(unittest.TestCase):
         del self.t
         del self.user
 
+    def test_read(self):
+        output = self.t.read()
+        assert len(output) == 1
+
     def get_records(self):
         records = self.t.from_database()
         return records
@@ -362,10 +366,10 @@ class Test_Process_QS_URL_Search_Param(unittest.TestCase):
     def test_process(self):
         qs = "first_name-sw=m&pk-ge=10&age-gt=18&age-le=55"
         output = Process_QS(qs, self.t).process()
-        assert all([i.first_name.startswith("M") for i in output])
-        assert all([ge(i.pk, 10) for i in output])
-        assert all([gt(i.age, 10) for i in output])
-        assert all([le(i.age, 55) for i in output])
+        assert all([i.first_name.startswith("M") for i in output["data"]])
+        assert all([ge(i.pk, 10) for i in output["data"]])
+        assert all([gt(i.age, 10) for i in output["data"]])
+        assert all([le(i.age, 55) for i in output["data"]])
 
     def test_process_1(self):
         garbage_qs = "name-joe&age>23"

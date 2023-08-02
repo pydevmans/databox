@@ -42,114 +42,115 @@ class UserActivity:
         self.password = password
         self.email_address = email_address
         self.database_title = database_title
-        self.headers = dict()
+        self.cookies = dict()
 
     @log_response(op="SIGN UP")
     def sign_up(self):
-        return requests.post(url + "/signup", data=self.__dict__)
+        res = requests.post(url + "/signup", json=self.__dict__)
+        return res
 
     def login(self):
         res = requests.post(
-            url + "/login", data={"username": self.username, "password": self.password}
+            url + "/login", json={"username": self.username, "password": self.password}
         )
         if res.status_code == 200:
             r = res.json()
-            self.headers.update({"x-access-token": r["token"]})
-            print("[LOG IN]", r["data"])
+            self.cookies.update({"token": res.cookies["token"]})
+            print("[LOG IN]", r)
         else:
             print("[LOG IN ERROR]", res.text)
 
     @log_response(op="LOGOUT")
     def logout(self):
-        return requests.get(url + "/logout", headers=self.headers)
+        return requests.get(url + "/logout", cookies=self.cookies)
 
     @log_response(op="CREATE DATABASE")
     def create_database(self, fields):
         return requests.post(
             url + f"/users/{self.username}/databases",
-            data={"title": self.database_title, "fields": fields},
-            headers=self.headers,
+            json={"title": self.database_title, "fields": fields},
+            cookies=self.cookies,
         )
 
     @log_response(op="LIST Database")
     def view_databases(self):
         return requests.get(
-            url + f"/users/{self.username}/databases", headers=self.headers
+            url + f"/users/{self.username}/databases", cookies=self.cookies
         )
 
     @log_response(op="DELETE ALL DATABASE(S)")
     def delete_databases(self):
         return requests.delete(
-            url + f"/users/{self.username}/databases", headers=self.headers
+            url + f"/users/{self.username}/databases", cookies=self.cookies
         )
 
     @log_response(op="VIEW RECORDS")
     def view_records(self, qs=""):
         return requests.get(
             url + f"/users/{self.username}/databases/{self.database_title}" + qs,
-            headers=self.headers,
+            cookies=self.cookies,
         )
 
     def rename_database(self, new_database_name):
         res = requests.put(
             url + f"/users/{self.username}/databases/{self.database_title}",
-            data={"database": new_database_name},
-            headers=self.headers,
+            json={"database": new_database_name},
+            cookies=self.cookies,
         )
         if res.status_code == 200:
             self.database_title = new_database_name
-        print("[RENAMED Database]", res.json()["data"])
+        print("[RENAMED Database]", res.json())
 
     @log_response(op="DELETE DATABASE")
     def delete_database(self):
         return requests.delete(
             url + f"/users/{self.username}/databases/{self.database_title}",
-            headers=self.headers,
+            cookies=self.cookies,
         )
 
     @log_response(op="ADD RECORD")
     def add_record(self, record):
         return requests.post(
             url + f"/users/{self.username}/databases/{self.database_title}",
-            data=record,
-            headers=self.headers,
+            json={"data": record},
+            cookies=self.cookies,
         )
 
     @log_response(op="VIEW RECORD")
     def view_record(self, pk):
         return requests.get(
             url + f"/users/{self.username}/databases/{self.database_title}/{pk}",
-            headers=self.headers,
+            cookies=self.cookies,
         )
 
     @log_response(op="REMOVE RECORD")
     def remove_record(self, pk):
         return requests.delete(
             url + f"/users/{self.username}/databases/{self.database_title}/{pk}",
-            headers=self.headers,
+            cookies=self.cookies,
         )
 
     @log_response(op="VIEW PROFILE")
     def view_profile(self):
         return requests.get(
-            url + f"/users/{self.username}/profile", headers=self.headers
+            url + f"/users/{self.username}/profile", cookies=self.cookies
         )
 
     @log_response(op="VIEW FEATURES")
     def view_features(self):
-        return requests.get(url + "/features", headers=self.headers)
+        return requests.get(url + "/features", cookies=self.cookies)
 
 
 if __name__ == "__main__":
     # Plug in the values to test App Functionality
     FIRST_NAME = "John"
     LAST_NAME = "Doe"
-    MEMBERSHIP = 2  # 0 or 1 or 2
-    USERNAME = "johndoe"
-    PASSWORD = "HelloWorld!"
+    MEMBERSHIP = "Premium"  # 'Free' or 'Basic' or 'Premium'
+    USERNAME = "johndeo"
+    PASSWORD = "HelloWord!"
     EMAIL_ADDRESS = "j.doe@gmail.com"
-    DATABASE_TITLE = "starwars"
-    NEW_DATABASE_NAME = "lordoflegions"
+    DATABASE_TITLE = "StarWords"
+    NEW_DATABASE_NAME = "CordOfPegions"
     FIELDS = "first_name:str,last_name:str,age:int,address:str,telephone:str,phone:str,email:str"
     PK = 2
 
@@ -172,8 +173,8 @@ if __name__ == "__main__":
     ua.view_databases()
 
     for i in range(2):
-        record = requests.get(url + "/random_users").json()
-        ua.add_record(record["data"])
+        record = requests.get(url + "/random_user").json()
+        ua.add_record(record)
 
     ua.view_records()
 

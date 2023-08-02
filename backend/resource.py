@@ -394,7 +394,7 @@ class UserDatabase(CustomResource):
         table = table.access_table(f"usernames/{username}/{database}")
         query_str = request.query_string.decode()
         if query_str:
-            return {"data": Process_QS(query_str, table).process()}
+            return Process_QS(query_str, table).process()
         try:
             return {"data": table.get_records()}
         except AttributeError:
@@ -437,8 +437,8 @@ class UserDatabase(CustomResource):
         table = ClientServiceType(g.current_user).get_table_klass()
         table = table.access_table(f"usernames/{username}/{database}")
         parsed_kwargs = database_parser.parse_args()
-        table.insert(**json.loads(parsed_kwargs["data_field"]))
-        return {"data": parsed_kwargs}
+        table.insert(**parsed_kwargs["data"])
+        return parsed_kwargs
 
 
 @api.route("/users/<string:username>/databases/<string:database>/<int:pk>")

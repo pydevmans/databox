@@ -384,7 +384,7 @@ def check_password(password, hash_orig_password):
 
 def sw(value, pattern):
     try:
-        if value.startswith(pattern):
+        if value.lower().startswith(pattern.lower()):
             return True
     except AttributeError:
         if str(value).startswith(str(pattern)):
